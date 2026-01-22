@@ -1,6 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Playfair_Display,
+  Pacifico,
+  Indie_Flower,
+  Caveat,
+  Shadows_Into_Light,
+  Dancing_Script,
+  Permanent_Marker,
+  Sacramento,
+  Gloria_Hallelujah,
+  Kalam,
+  Patrick_Hand,
+  Architects_Daughter
+} from "next/font/google";
 import "./globals.css";
+import Header from "./components/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -9,6 +25,75 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+});
+
+const pacifico = Pacifico({
+  variable: "--font-pacifico",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const indieFlower = Indie_Flower({
+  variable: "--font-indie-flower",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+});
+
+const shadowsIntoLight = Shadows_Into_Light({
+  variable: "--font-shadows",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const dancingScript = Dancing_Script({
+  variable: "--font-dancing",
+  subsets: ["latin"],
+});
+
+const permanentMarker = Permanent_Marker({
+  variable: "--font-permanent",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const sacramento = Sacramento({
+  variable: "--font-sacramento",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const gloriaHallelujah = Gloria_Hallelujah({
+  variable: "--font-gloria",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const kalam = Kalam({
+  variable: "--font-kalam",
+  weight: ["300", "400", "700"],
+  subsets: ["latin"],
+});
+
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const architectsDaughter = Architects_Daughter({
+  variable: "--font-architects",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -25,9 +110,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`
+          ${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${pacifico.variable}
+          ${indieFlower.variable} ${caveat.variable} ${shadowsIntoLight.variable} ${dancingScript.variable}
+          ${permanentMarker.variable} ${sacramento.variable} ${gloriaHallelujah.variable} ${kalam.variable}
+          ${patrickHand.variable} ${architectsDaughter.variable}
+          antialiased
+        `}
       >
-        {children}
+        <Header />
+        <main className="min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   );
