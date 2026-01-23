@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Controls from './Controls';
 import Preview from './Preview';
 import Pagination from './Pagination';
-import DownloadButtons from './DownloadButtons';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -36,30 +35,138 @@ export default function ConverterSection() {
       return;
     }
 
-    // Word boundary pagination
-    // A standard A4 page with handwriting might hold ~800-1000 chars depending on font size
-    const CHARS_PER_PAGE = 800;
-    const words = text.split(/(\s+)/); // Split by whitespace, keeping delimiters
-    const newPages = [];
+    // A4 Dimensions in Pixels (approx at 96dpi)
+    const PAGE_HEIGHT = 1123;
+    const PAGE_WIDTH = 794;
+
+    // Estimate margins based on paper type
+    // These should match the CSS padding in Preview.tsx
+    let verticalMarginTop = 48; // p-12 is 3rem = ~48px
+    let verticalMarginBottom = 48;
+    let horizontalMarginLeft = 48;
+    let horizontalMarginRight = 48;
+
+    if (paper === 'ruled') {
+      horizontalMarginLeft = 72; // 4.5rem = ~72px
+      verticalMarginTop = 8; // 0.5rem
+    } else if (paper === 'notebook-margin') {
+      horizontalMarginLeft = 64; // 4rem
+      verticalMarginTop = 8; // 0.5rem
+    } else if (paper === 'assignment-1' || paper === 'assignment-2') {
+      verticalMarginTop = 48; // 3rem
+      horizontalMarginLeft = 32; // 2rem or 3rem
+      horizontalMarginRight = 32;
+    }
+
+    // Adjust usable width/height
+    const availableWidth = PAGE_WIDTH - (horizontalMarginLeft + horizontalMarginRight);
+
+    // We need to measure the text precisely using the DOM
+    const measureDiv = document.createElement('div');
+    measureDiv.style.visibility = 'hidden';
+    measureDiv.style.position = 'absolute';
+    measureDiv.style.whiteSpace = 'pre';
+    measureDiv.style.fontFamily = font;
+    measureDiv.style.fontSize = `${fontSize}px`;
+    measureDiv.style.lineHeight = `${lineHeight}`;
+
+    document.body.appendChild(measureDiv);
+
+    // Calculate lines per page
+    // Content height is influenced by line-height * font-size
+    const singleLineHeightPx = fontSize * lineHeight;
+    const availableHeight = PAGE_HEIGHT - (verticalMarginTop + verticalMarginBottom);
+    const maxLinesPerPage = Math.floor(availableHeight / singleLineHeightPx);
+
+    const newPages: string[] = [];
+    let currentPageLines = 0;
     let currentPageContent = '';
 
-    for (const word of words) {
-      if ((currentPageContent + word).length > CHARS_PER_PAGE) {
-        if (currentPageContent) newPages.push(currentPageContent);
-        currentPageContent = word;
-      } else {
+    const paragraphs = text.split('\n');
+
+    for (let i = 0; i < paragraphs.length; i++) {
+      const paragraph = paragraphs[i];
+
+      if (paragraph === '') {
+        if (currentPageLines + 1 > maxLinesPerPage) {
+          newPages.push(currentPageContent);
+          currentPageContent = '';
+          currentPageLines = 0;
+        }
+        currentPageContent += '\n';
+        currentPageLines++;
+        continue;
+      }
+
+      const words = paragraph.split(/(\s+)/);
+      let currentLineWidth = 0;
+
+      for (let j = 0; j < words.length; j++) {
+        const word = words[j];
+        if (word === '') continue;
+
+        // Measure word width
+        measureDiv.textContent = word;
+        // Add spacing adjustment: (word.length - 1) * wordSpacing, plus wordSpacing after?
+        // In Preview, wordSpacing is applied to EACH char.
+        // So total width += length * wordSpacing.
+        let wordWidth = measureDiv.offsetWidth + (word.length * wordSpacing);
+
+        if (currentLineWidth + wordWidth > availableWidth) {
+          // Use a tolerance?
+          if (currentLineWidth > 0) {
+            // Wrap
+            currentPageLines++;
+            if (currentPageLines >= maxLinesPerPage) {
+              newPages.push(currentPageContent);
+              currentPageContent = '';
+              currentPageLines = 0;
+            }
+            currentLineWidth = wordWidth;
+          } else {
+            // Word is wider than entire line, forced break or clip
+            currentPageLines++;
+            if (currentPageLines >= maxLinesPerPage) {
+              newPages.push(currentPageContent);
+              currentPageContent = '';
+              currentPageLines = 0;
+            }
+            currentLineWidth = wordWidth;
+          }
+        } else {
+          currentLineWidth += wordWidth;
+        }
+
         currentPageContent += word;
       }
+
+      if (i < paragraphs.length - 1) {
+        currentPageContent += '\n';
+        currentPageLines++;
+        currentLineWidth = 0;
+        if (currentPageLines >= maxLinesPerPage) {
+          newPages.push(currentPageContent);
+          currentPageContent = '';
+          currentPageLines = 0;
+        }
+      }
     }
-    if (currentPageContent) newPages.push(currentPageContent);
 
-    setPages(newPages);
+    if (currentPageContent) {
+      newPages.push(currentPageContent);
+    }
 
-    // Reset to first page if current page is out of bounds
+    document.body.removeChild(measureDiv);
+
+    if (newPages.length === 0) setPages(['']);
+    else setPages(newPages);
+
     if (currentPage >= newPages.length) {
       setCurrentPage(0);
     }
-  }, [text]);
+  }, [text, fontSize, lineHeight, paper, font, wordSpacing]);
+
+
 
   const handleDownloadImage = async () => {
     if (!previewRef.current) return;
@@ -105,59 +212,82 @@ export default function ConverterSection() {
   };
 
   return (
-    <section className="py-16 bg-indigo-50/50 min-h-screen w-full" id="convert">
-      <div className="w-full px-4 md:px-8 lg:px-12">
-        <Controls
-          text={text}
-          setText={setText}
-          font={font}
-          setFont={setFont}
-          paper={paper}
-          setPaper={setPaper}
-          inkColor={inkColor}
-          setInkColor={setInkColor}
-          slant={slant}
-          setSlant={setSlant}
-          rotate={rotate}
-          setRotate={setRotate}
-          wobble={wobble}
-          setWobble={setWobble}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          lineHeight={lineHeight}
-          setLineHeight={setLineHeight}
-          wordSpacing={wordSpacing}
-          setWordSpacing={setWordSpacing}
-          pageTitle={pageTitle}
-          setPageTitle={setPageTitle}
-          pageDate={pageDate}
-          setPageDate={setPageDate}
-          extraFields={extraFields}
-          setExtraFields={setExtraFields}
-        />
+    <section className="py-12 bg-[#F5F5F7] min-h-screen w-full relative overflow-hidden" id="convert">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 z-0 opacity-[0.4]"
+        style={{ backgroundImage: 'radial-gradient(#CBD5E1 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+      </div>
 
-        <Preview
-          pages={pages}
-          currentPage={currentPage}
-          font={font}
-          paper={paper}
-          inkColor={inkColor}
-          slant={slant}
-          rotate={rotate}
-          wobble={wobble}
-          fontSize={fontSize}
-          lineHeight={lineHeight}
-          wordSpacing={wordSpacing}
-          pageTitle={pageTitle}
-          pageDate={pageDate}
-          titlePos={titlePos}
-          setTitlePos={setTitlePos}
-          datePos={datePos}
-          setDatePos={setDatePos}
-          extraFields={extraFields}
-          setExtraFields={setExtraFields}
-          previewRef={previewRef}
-        />
+      <div className="relative z-10 w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Controls */}
+          <div className="lg:col-span-5 space-y-8">
+            <Controls
+              text={text}
+              setText={setText}
+              font={font}
+              setFont={setFont}
+              paper={paper}
+              setPaper={setPaper}
+              inkColor={inkColor}
+              setInkColor={setInkColor}
+              slant={slant}
+              setSlant={setSlant}
+              rotate={rotate}
+              setRotate={setRotate}
+              wobble={wobble}
+              setWobble={setWobble}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              lineHeight={lineHeight}
+              setLineHeight={setLineHeight}
+              wordSpacing={wordSpacing}
+              setWordSpacing={setWordSpacing}
+              pageTitle={pageTitle}
+              setPageTitle={setPageTitle}
+              pageDate={pageDate}
+              setPageDate={setPageDate}
+              extraFields={extraFields}
+              setExtraFields={setExtraFields}
+            />
+          </div>
+
+          {/* Right Column: Preview */}
+          <div className="lg:col-span-7 space-y-8">
+            <div className="sticky top-8">
+              <Preview
+                pages={pages}
+                currentPage={currentPage}
+                font={font}
+                paper={paper}
+                inkColor={inkColor}
+                slant={slant}
+                rotate={rotate}
+                wobble={wobble}
+                fontSize={fontSize}
+                lineHeight={lineHeight}
+                wordSpacing={wordSpacing}
+                pageTitle={pageTitle}
+                pageDate={pageDate}
+                titlePos={titlePos}
+                setTitlePos={setTitlePos}
+                datePos={datePos}
+                setDatePos={setDatePos}
+                extraFields={extraFields}
+                setExtraFields={setExtraFields}
+                previewRef={previewRef}
+                onDownloadImage={handleDownloadImage}
+                onDownloadPDF={handleDownloadPDF}
+                isGenerating={isGenerating}
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pages.length}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Hidden container for generating all pages */}
         <div style={{ position: 'absolute', top: -10000, left: -10000, pointerEvents: 'none' }}>
@@ -188,18 +318,6 @@ export default function ConverterSection() {
             </div>
           ))}
         </div>
-
-        <Pagination
-          currentPage={currentPage}
-          totalPages={pages.length}
-          onPageChange={setCurrentPage}
-        />
-
-        <DownloadButtons
-          onDownloadImage={handleDownloadImage}
-          onDownloadPDF={handleDownloadPDF}
-          isGenerating={isGenerating}
-        />
       </div>
     </section>
   );

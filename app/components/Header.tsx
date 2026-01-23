@@ -3,56 +3,49 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { PenTool, Menu as MenuIcon, X } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  const isActive = (path: string) => pathname === path;
+  const navLinks = [
+    { name: "Home", href: "/" },
+    { name: "Why Us", href: "#why-us" },
+    { name: "Use Cases", href: "#use-cases" },
+    { name: "FAQ", href: "#faqs" },
+  ];
 
   return (
-    <header className="bg-white text-gray-800 shadow-md">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+    <header className="relative z-50 bg-white border-b border-gray-100 py-5">
+      <div className="container mx-auto px-6 md:px-12 flex justify-between items-center">
         {/* Logo Section */}
-        <Link href="/" className="flex items-center space-x-2 text-xl font-bold hover:opacity-80 transition-opacity">
-          <span className="text-2xl">✍️</span>
-          <span>TextToHandwriting</span>
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 bg-[#1e355e] rounded-xl flex items-center justify-center transition-transform group-hover:rotate-6 shadow-indigo-200 shadow-lg">
+            <PenTool className="text-white w-5 h-5" />
+          </div>
+          <span className="text-2xl font-black text-[#1e355e] tracking-tighter">
+            Handwriting<span className="text-blue-500">Studio</span>
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8 font-medium">
-          <Link
-            href="/"
-            className={`hover:text-indigo-600 transition-colors pb-1 ${isActive('/') ? 'border-b-2 border-indigo-600 text-indigo-600' : ''}`}
-          >
-            Home
-          </Link>
-          <Link
-            href="/convert"
-            className={`hover:text-indigo-600 transition-colors pb-1 ${isActive('/convert') ? 'border-b-2 border-indigo-600 text-indigo-600' : ''}`}
-          >
-            Convert
-          </Link>
-          <Link
-            href="/features"
-            className={`hover:text-indigo-600 transition-colors pb-1 ${isActive('/features') ? 'border-b-2 border-indigo-600 text-indigo-600' : ''}`}
-          >
-            Features
-          </Link>
-          <Link
-            href="/contact"
-            className={`hover:text-indigo-600 transition-colors pb-1 ${isActive('/contact') ? 'border-b-2 border-indigo-600 text-indigo-600' : ''}`}
-          >
-            Contact
-          </Link>
+        <nav className="hidden lg:flex items-center space-x-10 font-bold group/nav">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="relative text-[#1e355e]/70 hover:text-[#1e355e] transition-colors py-2 text-sm uppercase tracking-widest group/link"
+            >
+              {link.name}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover/link:w-full" />
+            </Link>
+          ))}
 
           {/* Start Writing Button */}
           <Link
-            href="/convert"
-            className="bg-indigo-600 text-white px-5 py-2 rounded-full font-semibold transition-colors duration-300"
-            style={{ backgroundColor: '#4f46e5' }} // Default indigo-600
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e355e'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+            href="#convert"
+            className="bg-[#1e355e] text-white px-8 py-3 rounded-full font-bold transition-all duration-300 shadow-xl shadow-indigo-900/10 hover:bg-blue-600 hover:scale-105 active:scale-95 flex items-center gap-2 text-sm tracking-wide"
           >
             Start Writing
           </Link>
@@ -60,81 +53,38 @@ export default function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden p-2 focus:outline-none hover:bg-gray-100 rounded-md transition-colors"
+          className="lg:hidden p-2 text-[#1e355e] bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {isMenuOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
+          {isMenuOpen ? <X size={24} /> : <MenuIcon size={24} />}
         </button>
       </div>
 
       {/* Mobile Navigation Dropdown */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100">
-          <nav className="flex flex-col p-4 space-y-3">
+      <div
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-100 shadow-2xl transition-all duration-500 origin-top ${isMenuOpen ? "scale-y-100 opacity-100 visible" : "scale-y-0 opacity-0 invisible"
+          }`}
+      >
+        <nav className="flex flex-col p-8 space-y-6">
+          {navLinks.map((link) => (
             <Link
-              href="/"
-              className={`block px-3 py-2 rounded-md transition-colors ${isActive('/') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'hover:bg-gray-50'}`}
+              key={link.name}
+              href={link.href}
+              className="text-xl font-black text-[#1e355e] hover:text-blue-500 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Home
+              {link.name}
             </Link>
-            <Link
-              href="/convert"
-              className={`block px-3 py-2 rounded-md transition-colors ${isActive('/convert') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'hover:bg-gray-50'}`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Convert
-            </Link>
-            <Link
-              href="/features"
-              className={`block px-3 py-2 rounded-md transition-colors ${isActive('/features') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'hover:bg-gray-50'}`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Features
-            </Link>
-            <Link
-              href="/contact"
-              className={`block px-3 py-2 rounded-md transition-colors ${isActive('/contact') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'hover:bg-gray-50'}`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Contact
-            </Link>
-            <Link
-              href="/convert"
-              className="block text-center bg-indigo-600 text-white px-3 py-2 rounded-md font-semibold mt-2 transition-colors duration-300"
-              style={{ backgroundColor: '#4f46e5' }}
-              onClick={() => setIsMenuOpen(false)}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e355e'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
-            >
-              Start Writing
-            </Link>
-          </nav>
-        </div>
-      )}
+          ))}
+          <Link
+            href="#convert"
+            className="text-center text-white px-6 py-4 rounded-2xl font-black bg-[#1e355e] transition-all shadow-xl hover:scale-[1.02]"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Start Writing
+          </Link>
+        </nav>
+      </div>
     </header>
   );
 }
