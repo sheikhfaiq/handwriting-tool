@@ -13,6 +13,46 @@ import {
 } from 'lucide-react';
 
 const Footer = () => {
+    const [footerNav, setFooterNav] = React.useState<any[]>([]);
+    const [footerHelp, setFooterHelp] = React.useState<any[]>([]);
+
+    React.useEffect(() => {
+        const fetchMenus = async () => {
+            try {
+                const res = await fetch("/api/admin/menus");
+                const data = await res.json();
+
+                const navMenu = data.find((m: any) => m.name === "FOOTER_NAV");
+                if (navMenu) setFooterNav(navMenu.items);
+
+                const helpMenu = data.find((m: any) => m.name === "FOOTER_HELP");
+                if (helpMenu) setFooterHelp(helpMenu.items);
+            } catch (error) {
+                console.error("Failed to fetch footer menus", error);
+            }
+        };
+        fetchMenus();
+    }, []);
+
+    const defaultNav = [
+        { label: 'Home', url: '/' },
+        { label: 'Convert Tool', url: '#convert' },
+        { label: 'Use Cases', url: '#use-cases' },
+        { label: 'Why Us', url: '#why-us' },
+        { label: 'FAQs', url: '#faqs' }
+    ];
+
+    const defaultHelp = [
+        { label: 'Privacy Policy', url: '#' },
+        { label: 'Terms of Service', url: '#' },
+        { label: 'Cookie Policy', url: '#' },
+        { label: 'Support Center', url: '#' },
+        { label: 'Feedback', url: '#' }
+    ];
+
+    const navItems = footerNav.length > 0 ? footerNav : defaultNav;
+    const helpItems = footerHelp.length > 0 ? footerHelp : defaultHelp;
+
     return (
         <footer className="bg-[#1e355e] text-white pt-20 pb-10 relative overflow-hidden">
             {/* Background Decorative Elements */}
@@ -21,23 +61,28 @@ const Footer = () => {
             <div className="absolute -right-20 -top-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-[100px]"></div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16 ">
+                    {/* Brand Section */}
+                    <div className="flex flex-col gap-4 mt-16">
+                        <Link href="/" className="flex items-center gap-3 group">
+                            <img
+                                src="/logo.png"
+                                alt="Handwriting Studio Logo"
+                                className="h-14 w-auto object-contain brightness-0 invert"
+                            />
+                        </Link>
+
+                    </div>
 
                     {/* Quick Links */}
-                    <div>
+                    <div className="flex flex-col lg:items-center">
                         <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Navigation</h4>
                         <ul className="space-y-4">
-                            {[
-                                { name: 'Home', href: '/' },
-                                { name: 'Convert Tool', href: '#convert' },
-                                { name: 'Use Cases', href: '#use-cases' },
-                                { name: 'Why Us', href: '#why-us' },
-                                { name: 'FAQs', href: '#faqs' }
-                            ].map((item) => (
-                                <li key={item.name}>
-                                    <Link href={item.href} className="text-blue-100/60 hover:text-[#FBC02D] transition-colors flex items-center gap-2 group">
+                            {navItems.map((item: any) => (
+                                <li key={item.label}>
+                                    <Link href={item.url} className="text-blue-100/60 hover:text-[#FBC02D] transition-colors flex items-center gap-2 group">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FBC02D] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        {item.name}
+                                        {item.label}
                                     </Link>
                                 </li>
                             ))}
@@ -45,31 +90,17 @@ const Footer = () => {
                     </div>
 
                     {/* Resources */}
-                    <div>
+                    <div className="flex flex-col lg:items-end">
                         <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Help & Support</h4>
                         <ul className="space-y-4">
-                            {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Support Center', 'Feedback'].map((item) => (
-                                <li key={item}>
-                                    <a href="#" className="text-blue-100/60 hover:text-[#FBC02D] transition-colors">
-                                        {item}
-                                    </a>
+                            {helpItems.map((item: any) => (
+                                <li key={item.label}>
+                                    <Link href={item.url} className="text-blue-100/60 hover:text-[#FBC02D] transition-colors">
+                                        {item.label}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
-                    </div>
-
-                    {/* Newsletter / Contact */}
-                    <div>
-                        <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Our Mission</h4>
-                        <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                            <p className="text-blue-100/70 text-sm italic mb-4">
-                                "Because in a world of pixels and defaults, a handwritten note still carries a soul."
-                            </p>
-                            <div className="flex items-center gap-3 text-blue-100/60 transition-colors hover:text-[#FBC02D]">
-                                <Mail size={16} />
-                                <span className="text-sm">hello@handwriting.studio</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

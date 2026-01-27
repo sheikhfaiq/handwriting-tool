@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  role          String    @default("ADMIN")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Page {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  content       String    @db.Text
+  published     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  content       String    @db.Text
+  excerpt       String?   @db.Text
+  coverImage    String?
+  category      String?
+  published     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Menu {
+  id            String    @id @default(cuid())
+  name          String    @unique // e.g., "HEADER", "FOOTER"
+  items         MenuItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model MenuItem {
+  id            String    @id @default(cuid())
+  label         String
+  url           String
+  order         Int       @default(0)
+  parent        MenuItem? @relation("SubItems", fields: [parentId], references: [id])
+  parentId      String?
+  subItems      MenuItem[] @relation("SubItems")
+  menu          Menu      @relation(fields: [menuId], references: [id])
+  menuId        String
+}

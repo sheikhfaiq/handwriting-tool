@@ -19,7 +19,7 @@ import {
   Schoolbell
 } from "next/font/google";
 import "./globals.css";
-import Header from "./components/Header";
+import { AuthProvider } from "@/components/admin/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -119,8 +119,11 @@ const schoolbell = Schoolbell({
 });
 
 export const metadata: Metadata = {
-  title: "Text To Handwriting ",
-  description: "Convert your digital text into beautiful, natural handwriting instantly. Perfect for assignments, letters, and personal notes.",
+  title: "Text To Handwriting",
+  description: "Create and convert handwriting using AI",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -140,10 +143,9 @@ export default function RootLayout({
           antialiased
         `}
       >
-        <Header />
-        <main className="min-h-screen">
+        <AuthProvider>
           {children}
-        </main>
+        </AuthProvider>
       </body>
     </html>
   );

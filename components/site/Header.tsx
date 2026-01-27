@@ -1,32 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PenTool, Menu as MenuIcon, X } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-  const navLinks = [
+  const [navLinks, setNavLinks] = useState([
     { name: "Home", href: "/" },
     { name: "Why Us", href: "#why-us" },
     { name: "Use Cases", href: "#use-cases" },
     { name: "FAQ", href: "#faqs" },
-  ];
+  ]);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const res = await fetch("/api/admin/menus");
+        const data = await res.json();
+        const header = data.find((m: any) => m.name === "HEADER");
+
+        const baseLinks = [
+          { name: "Home", href: "/" },
+          { name: "Blog", href: "/blog" },
+        ];
+
+        if (header && header.items.length > 0) {
+          const menuLinks = header.items.map((item: any) => ({
+            name: item.label,
+            href: item.url
+          }));
+
+          // Filter out duplicates if Home/Blog were already in the database menu
+          const filteredMenuLinks = menuLinks.filter((ml: any) =>
+            !baseLinks.some(bl => bl.href === ml.href)
+          );
+
+          setNavLinks([...baseLinks, ...filteredMenuLinks]);
+        } else {
+          setNavLinks(baseLinks);
+        }
+      } catch (error) {
+        console.error("Failed to fetch menu", error);
+      }
+    };
+    fetchMenu();
+  }, []);
 
   return (
     <header className="relative z-50 bg-white border-b border-gray-100 py-5">
       <div className="container mx-auto px-6 md:px-12 flex justify-between items-center">
         {/* Logo Section */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-[#1e355e] rounded-xl flex items-center justify-center transition-transform group-hover:rotate-6 shadow-indigo-200 shadow-lg">
-            <PenTool className="text-white w-5 h-5" />
-          </div>
-          <span className="text-2xl font-black text-[#1e355e] tracking-tighter">
-            Handwriting<span className="text-blue-500">Studio</span>
-          </span>
+        <Link href="/" className="flex items-center gap-3 group">
+          <img
+            src="/logo.png"
+            alt="Handwriting Studio Logo"
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-110"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -44,7 +76,7 @@ export default function Header() {
 
           {/* Start Writing Button */}
           <Link
-            href="#convert"
+            href="/#convert"
             className="bg-[#1e355e] text-white px-8 py-3 rounded-full font-bold transition-all duration-300 shadow-xl shadow-indigo-900/10 hover:bg-blue-600 hover:scale-105 active:scale-95 flex items-center gap-2 text-sm tracking-wide"
           >
             Start Writing
@@ -77,7 +109,7 @@ export default function Header() {
             </Link>
           ))}
           <Link
-            href="#convert"
+            href="/#convert"
             className="text-center text-white px-6 py-4 rounded-2xl font-black bg-[#1e355e] transition-all shadow-xl hover:scale-[1.02]"
             onClick={() => setIsMenuOpen(false)}
           >

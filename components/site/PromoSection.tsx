@@ -16,7 +16,7 @@ export default function PromoSection() {
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
                         Text to Handwriting
                     </h2>
-                    <p className="text-white-100/70 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
+                    <p className="text-blue-50/80 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
                         A Text to Handwriting Converter is an online tool that transforms typed text into realistic handwritten text.
                         It helps users create handwritten-style documents quickly while maintaining neatness and readability.
                         Convert text to handwriting tool is widely used by students, teachers, and professionals who want the appearance of handwriting without the effort of writing manually.
