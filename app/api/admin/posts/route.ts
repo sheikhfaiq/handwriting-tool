@@ -6,7 +6,8 @@ import slugify from "slugify";
 
 export async function GET() {
     try {
-        const posts = await prisma.post.findMany({
+        const posts = await (prisma as any).post.findMany({
+            include: { category: true },
             orderBy: { createdAt: "desc" },
         });
         return NextResponse.json(posts);
@@ -23,19 +24,19 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, content, excerpt, coverImage, published, category, slug: userSlug } = await req.json();
+        const { title, content, excerpt, coverImage, published, categoryId, slug: userSlug } = await req.json();
         const slug = userSlug
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
 
-        const post = await prisma.post.create({
+        const post = await (prisma as any).post.create({
             data: {
                 title,
                 content,
                 excerpt,
                 coverImage,
                 published: published || false,
-                category,
+                categoryId,
                 slug,
             },
         });

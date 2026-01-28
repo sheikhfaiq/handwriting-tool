@@ -16,8 +16,9 @@ export async function generateStaticParams() {
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
     const params = await props.params;
-    const post = await prisma.post.findUnique({
+    const post = await (prisma as any).post.findUnique({
         where: { slug: params.slug },
+        include: { category: true },
     });
 
     if (!post || !post.published) {
@@ -26,7 +27,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
     return (
         <div className="bg-[#fdfbf7] min-h-screen overflow-x-hidden">
-            <article className="max-w-4xl mx-auto py-12 px-4">
+            <article className="max-w-3xl mx-auto py-12 px-4">
                 {post.coverImage && (
                     <img
                         src={post.coverImage}
@@ -35,6 +36,11 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     />
                 )}
                 <header className="mb-8">
+                    {post.category && (
+                        <span className="text-sm font-bold uppercase tracking-widest text-red-500 mb-2 block">
+                            {post.category.name}
+                        </span>
+                    )}
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
                         {post.title}
                     </h1>
@@ -48,7 +54,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 </header>
 
                 <div
-                    className="prose prose-slate lg:prose-lg max-w-none"
+                    className="prose prose-slate lg:prose-lg max-w-none text-justify break-words hyphens-auto"
                     dangerouslySetInnerHTML={{ __html: post.content }}
                 />
 

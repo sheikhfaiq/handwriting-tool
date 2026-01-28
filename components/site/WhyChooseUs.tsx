@@ -16,7 +16,7 @@ import {
 const WhyChooseUs = () => {
     const values = [
         {
-            icon: <img src="/logo.png" className="h-7 w-auto object-contain brightness-0 invert" alt="Styles" />,
+            icon: <PenTool className="w-8 h-8 text-white" />,
             title: "Multiple Handwriting Styles",
             description: "Choose from a variety of beautiful, authentic handwriting fonts that perfectly match your personality.",
             color: "bg-[#1e3a8a]"

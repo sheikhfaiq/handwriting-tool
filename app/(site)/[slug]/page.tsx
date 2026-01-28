@@ -26,12 +26,12 @@ export default async function StaticPage(props: { params: Promise<{ slug: string
 
     return (
         <div className="bg-[#fdfbf7] min-h-screen overflow-x-hidden">
-            <article className="max-w-4xl mx-auto py-12 px-4">
+            <article className="max-w-3xl mx-auto py-12 px-4">
                 <h1 className="text-4xl font-bold mb-8 text-slate-900 border-b border-slate-200 pb-4">
                     {page.title}
                 </h1>
                 <div
-                    className="prose prose-slate lg:prose-lg max-w-none 
+                    className="prose prose-slate lg:prose-lg max-w-none text-justify break-words hyphens-auto
                            prose-img:rounded-xl prose-img:my-8 
                            prose-h2:font-bold prose-h2:text-slate-800 prose-h2:mt-10"
                     dangerouslySetInnerHTML={{ __html: page.content }}

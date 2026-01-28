@@ -54,7 +54,7 @@ const Footer = () => {
     const helpItems = footerHelp.length > 0 ? footerHelp : defaultHelp;
 
     return (
-        <footer className="bg-[#1e355e] text-white pt-20 pb-10 relative overflow-hidden">
+        <footer className="bg-[#1e355e] text-[#eae3db] pt-20 pb-10 relative overflow-hidden ">
             {/* Background Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent"></div>
             <div className="absolute -left-20 -bottom-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]"></div>
@@ -80,8 +80,8 @@ const Footer = () => {
                         <ul className="space-y-4">
                             {navItems.map((item: any) => (
                                 <li key={item.label}>
-                                    <Link href={item.url} className="text-blue-100/60 hover:text-[#FBC02D] transition-colors flex items-center gap-2 group">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBC02D] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <Link href={item.url} className="text-[#eae3db]-100/60  transition-colors flex items-center gap-2 group">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBC02D] opacity-0  transition-opacity"></div>
                                         {item.label}
                                     </Link>
                                 </li>
@@ -89,37 +89,22 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Resources */}
-                    <div className="flex flex-col lg:items-end">
-                        <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Help & Support</h4>
-                        <ul className="space-y-4">
-                            {helpItems.map((item: any) => (
-                                <li key={item.label}>
-                                    <Link href={item.url} className="text-blue-100/60 hover:text-[#FBC02D] transition-colors">
-                                        {item.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* About Section */}
+                    <div className="flex flex-col items-center lg:items-center text-center">
+                        <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Text to Handwriting</h4>
+                        <p className="text-[#eae3db]/80 text-sm leading-relaxed max-w-xs text-justify break-words hyphens-auto">
+                            Text to Handwriting is a free online tool that changes typed text into real-looking Handwriting.
+                            You can make custom handwritten notes,
+                            download them as images or PDFs, and use many other handwriting features easily.
+                        </p>
                     </div>
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <p className="text-blue-100/40 text-sm">
-                        © {new Date().getFullYear()} Handwriting Studio. All rights reserved.
+                <div className="pt-10 border-t border-white/50 flex flex-col md:flex-row justify-center items-center gap-6 text-center">
+                    <p className="text-white-100/40 text-md  ">
+                        © {new Date().getFullYear()} Text To Handwriting. All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6 text-blue-100/40 text-sm">
-                        <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
-                            <Globe size={14} />
-                            <span>English (US)</span>
-                        </div>
-                        <span className="hidden md:block">|</span>
-                        <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
-                            <span>Status: Operational</span>
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </footer>

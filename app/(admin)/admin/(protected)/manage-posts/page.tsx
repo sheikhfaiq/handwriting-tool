@@ -11,6 +11,9 @@ interface Post {
     published: boolean;
     createdAt: string;
     coverImage?: string;
+    category?: {
+        name: string;
+    };
 }
 
 export default function PostsList() {
@@ -65,6 +68,7 @@ export default function PostsList() {
                         <tr>
                             <th className="px-6 py-4 font-semibold text-slate-700">Cover</th>
                             <th className="px-6 py-4 font-semibold text-slate-700">Title</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700">Category</th>
                             <th className="px-6 py-4 font-semibold text-slate-700">Status</th>
                             <th className="px-6 py-4 font-semibold text-slate-700">Date</th>
                             <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
@@ -85,6 +89,15 @@ export default function PostsList() {
                                 <td className="px-6 py-4">
                                     <div className="font-medium text-slate-900">{post.title}</div>
                                     <div className="text-slate-400 text-xs font-mono">/blog/{post.slug}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    {post.category ? (
+                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
+                                            {post.category.name}
+                                        </span>
+                                    ) : (
+                                        <span className="text-slate-400 text-xs italic">Uncategorized</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4">
                                     <span

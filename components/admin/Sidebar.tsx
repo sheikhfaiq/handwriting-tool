@@ -8,12 +8,8 @@ import {
     Rss,
     LogOut,
     Search,
-    Bell,
-    MessageSquare,
     Inbox,
-    Users,
     Menu as MenuIcon,
-    Settings,
     ChevronLeft
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -25,14 +21,12 @@ const Sidebar = () => {
     const mainNavItems = [
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
         { name: "Pages", href: "/admin/manage-pages", icon: FileText },
+        { name: "Categories", href: "/admin/manage-categories", icon: Inbox },
         { name: "Posts", href: "/admin/manage-posts", icon: Rss },
         { name: "Menus", href: "/admin/manage-menus", icon: MenuIcon },
     ];
 
-    const teamNavItems = [
-        { name: "Users", href: "/admin/users", icon: Users },
-        { name: "Settings", href: "/admin/settings", icon: Settings },
-    ];
+
 
     const isActive = (href: string) => {
         if (href === "/admin") return pathname === "/admin";
@@ -117,41 +111,6 @@ const Sidebar = () => {
                         );
                     })}
                 </ul>
-
-                <div className="mt-8">
-                    <div className="flex items-center justify-between px-4 mb-4">
-                        <span className="text-xs font-bold text-[#1e355e]/40 uppercase tracking-wider">Additional</span>
-                        <div className="flex gap-2">
-                            <span className="text-[10px] text-orange-500 font-bold uppercase cursor-pointer hover:underline">View All</span>
-                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                        </div>
-                    </div>
-                    <ul className="space-y-1">
-                        {teamNavItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.href);
-                            return (
-                                <li key={item.name}>
-                                    <Link
-                                        href={item.href}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${active
-                                            ? "bg-[#1e355e] text-white"
-                                            : "text-gray-500 hover:bg-gray-50"
-                                            }`}
-                                    >
-                                        <div className="relative">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                                                <Icon size={16} />
-                                            </div>
-                                            <div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></div>
-                                        </div>
-                                        <span className="font-semibold flex-1">{item.name}</span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
             </nav>
 
             <div className="p-6 mt-auto">

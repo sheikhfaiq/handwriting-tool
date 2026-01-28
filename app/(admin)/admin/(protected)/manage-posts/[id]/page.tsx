@@ -14,7 +14,8 @@ export default function PostForm() {
 
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
-    const [category, setCategory] = useState("General");
+    const [categoryId, setCategoryId] = useState("");
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
     const [content, setContent] = useState("");
     const [excerpt, setExcerpt] = useState("");
     const [coverImage, setCoverImage] = useState("");
@@ -24,10 +25,21 @@ export default function PostForm() {
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
+        fetchCategories();
         if (!isNew) {
             fetchPost();
         }
     }, [id]);
+
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch("/api/admin/categories");
+            const data = await res.json();
+            setCategories(data);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
+    };
 
     const fetchPost = async () => {
         try {
@@ -35,7 +47,7 @@ export default function PostForm() {
             const data = await res.json();
             setTitle(data.title);
             setSlug(data.slug || "");
-            setCategory(data.category || "General");
+            setCategoryId(data.categoryId || "");
             setContent(data.content);
             setExcerpt(data.excerpt || "");
             setCoverImage(data.coverImage || "");
@@ -83,7 +95,7 @@ export default function PostForm() {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, slug, category, content, excerpt, coverImage, published }),
+                body: JSON.stringify({ title, slug, categoryId, content, excerpt, coverImage, published }),
             });
 
             if (!res.ok) {
@@ -144,13 +156,18 @@ export default function PostForm() {
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700">Category</label>
-                        <input
-                            type="text"
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                            placeholder="e.g., Announcements, Tutorials"
-                        />
+                        <select
+                            value={categoryId}
+                            onChange={(e) => setCategoryId(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-white"
+                        >
+                            <option value="">Uncategorized</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 

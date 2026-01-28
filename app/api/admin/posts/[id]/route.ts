@@ -10,8 +10,9 @@ export async function GET(
 ) {
     try {
         const params = await props.params;
-        const post = await prisma.post.findUnique({
+        const post = await (prisma as any).post.findUnique({
             where: { id: params.id },
+            include: { category: true },
         });
 
         if (!post) {
@@ -36,12 +37,12 @@ export async function PUT(
 
     try {
         const params = await props.params;
-        const { title, content, excerpt, coverImage, published, category, slug: userSlug } = await req.json();
+        const { title, content, excerpt, coverImage, published, categoryId, slug: userSlug } = await req.json();
         const slug = userSlug
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
 
-        const post = await prisma.post.update({
+        const post = await (prisma as any).post.update({
             where: { id: params.id },
             data: {
                 title,
@@ -49,7 +50,7 @@ export async function PUT(
                 excerpt,
                 coverImage,
                 published,
-                category,
+                categoryId,
                 slug,
             },
         });
