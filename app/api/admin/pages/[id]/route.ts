@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
+const prismaAny = prisma as any;
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import slugify from "slugify";
@@ -10,7 +12,7 @@ export async function GET(
 ) {
     try {
         const params = await props.params;
-        const page = await prisma.page.findUnique({
+        const page = await prismaAny.page.findUnique({
             where: { id: params.id },
         });
 
@@ -36,14 +38,15 @@ export async function PUT(
 
     try {
         const params = await props.params;
-        const { title, content, published } = await req.json();
+        const { title, content, metaDescription, published } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
-        const page = await prisma.page.update({
+        const page = await prismaAny.page.update({
             where: { id: params.id },
             data: {
                 title,
                 content,
+                metaDescription,
                 published,
                 slug,
             },
@@ -67,7 +70,7 @@ export async function DELETE(
 
     try {
         const params = await props.params;
-        await prisma.page.delete({
+        await prismaAny.page.delete({
             where: { id: params.id },
         });
 

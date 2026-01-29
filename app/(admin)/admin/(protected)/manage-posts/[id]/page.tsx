@@ -18,6 +18,7 @@ export default function PostForm() {
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
     const [content, setContent] = useState("");
     const [excerpt, setExcerpt] = useState("");
+    const [metaDescription, setMetaDescription] = useState("");
     const [coverImage, setCoverImage] = useState("");
     const [published, setPublished] = useState(false);
     const [loading, setLoading] = useState(!isNew);
@@ -50,6 +51,7 @@ export default function PostForm() {
             setCategoryId(data.categoryId || "");
             setContent(data.content);
             setExcerpt(data.excerpt || "");
+            setMetaDescription(data.metaDescription || "");
             setCoverImage(data.coverImage || "");
             setPublished(data.published);
         } catch (error) {
@@ -95,7 +97,7 @@ export default function PostForm() {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, slug, categoryId, content, excerpt, coverImage, published }),
+                body: JSON.stringify({ title, slug, categoryId, content, excerpt, metaDescription, coverImage, published }),
             });
 
             if (!res.ok) {
@@ -171,16 +173,29 @@ export default function PostForm() {
                     </div>
                 </div>
 
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Excerpt (Short Summary)</label>
+                    <textarea
+                        value={excerpt}
+                        onChange={(e) => setExcerpt(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-24 resize-none"
+                        placeholder="A brief summary of your post..."
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Meta Description (SEO)</label>
+                    <textarea
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-24 resize-none"
+                        placeholder="SEO meta description (150-160 characters recommended)..."
+                        maxLength={160}
+                    />
+                    <p className="text-xs text-slate-400">{metaDescription.length}/160 characters</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">Excerpt (Short Summary)</label>
-                        <textarea
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-24 resize-none"
-                            placeholder="A brief summary of your post..."
-                        />
-                    </div>
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700">Cover Image</label>
                         <div className="flex gap-2">

@@ -16,10 +16,14 @@ import {
   Architects_Daughter,
   Cedarville_Cursive,
   Homemade_Apple,
-  Schoolbell
+  Schoolbell,
+  Satisfy,
+  Crafty_Girls,
+  Swanky_and_Moo_Moo
 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/admin/AuthProvider";
+import ScrollToTop from "@/components/site/ScrollToTop";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,11 +122,89 @@ const schoolbell = Schoolbell({
   subsets: ["latin"],
 });
 
+const satisfy = Satisfy({
+  variable: "--font-satisfy",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const craftyGirls = Crafty_Girls({
+  variable: "--font-crafty-girls",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const swankyMoo = Swanky_and_Moo_Moo({
+  variable: "--font-swanky-moo",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Text To Handwriting",
-  description: "Create and convert handwriting using AI",
+  metadataBase: new URL('https://textohandwritting.com'),
+  title: {
+    default: "Text To Handwriting - Free Online Handwriting Converter",
+    template: "%s | Text To Handwriting"
+  },
+  description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds. Download as PNG or PDF.",
+  keywords: [
+    "text to handwriting",
+    "handwriting converter",
+    "text to handwriting converter",
+    "online handwriting generator",
+    "handwriting font",
+    "convert text to handwriting",
+    "handwritten notes",
+    "handwriting tool",
+    "free handwriting converter",
+    "digital handwriting"
+  ],
+  authors: [{ name: "Text To Handwriting" }],
+  creator: "Text To Handwriting",
+  publisher: "Text To Handwriting",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: "/favicon.png",
+  },
+  verification: {
+    google: "sYyL-HutKxE8l_JAGNFffrEIZeuSYxeva4ibIGTePu8",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://textohandwritting.com",
+    title: "Text To Handwriting - Free Online Handwriting Converter",
+    description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds.",
+    siteName: "Text To Handwriting",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Text To Handwriting Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Text To Handwriting - Free Online Handwriting Converter",
+    description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -140,11 +222,13 @@ export default function RootLayout({
           ${permanentMarker.variable} ${sacramento.variable} ${gloriaHallelujah.variable} ${kalam.variable}
           ${patrickHand.variable} ${architectsDaughter.variable}
           ${cedarville.variable} ${homemade.variable} ${schoolbell.variable}
+          ${satisfy.variable} ${craftyGirls.variable} ${swankyMoo.variable}
           antialiased
         `}
       >
         <AuthProvider>
           {children}
+          <ScrollToTop />
         </AuthProvider>
       </body>
     </html>

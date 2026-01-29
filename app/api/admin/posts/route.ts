@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, content, excerpt, coverImage, published, categoryId, slug: userSlug } = await req.json();
+        const { title, content, excerpt, metaDescription, coverImage, published, categoryId, slug: userSlug } = await req.json();
         const slug = userSlug
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
                 title,
                 content,
                 excerpt,
+                metaDescription,
                 coverImage,
                 published: published || false,
                 categoryId,

@@ -18,6 +18,7 @@ export const authOptions: NextAuthOptions = {
 
                 // Hardcoded Admin Access
                 if (credentials.email === "admin@gmail.com" && credentials.password === "cyberadmin123!") {
+                    console.log("Authorize: Hardcoded admin login attempt successful");
                     return {
                         id: "admin-hardcoded",
                         email: "admin@gmail.com",
@@ -25,6 +26,8 @@ export const authOptions: NextAuthOptions = {
                         role: "ADMIN",
                     };
                 }
+
+                console.log("Authorize: Checking database for user:", credentials.email);
 
                 const user = await prisma.user.findUnique({
                     where: {

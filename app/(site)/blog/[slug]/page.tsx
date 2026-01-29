@@ -1,7 +1,33 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const post = await (prisma as any).post.findUnique({
+        where: { slug: slug },
+        select: { title: true, excerpt: true, metaDescription: true, coverImage: true }
+    });
+
+    if (!post) return { title: "Post Not Found" };
+
+    return {
+        title: post.title,
+        description: post.metaDescription || post.excerpt || `Read more about ${post.title}`,
+        openGraph: {
+            title: post.title,
+            description: post.metaDescription || post.excerpt,
+            images: post.coverImage ? [post.coverImage] : [],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: post.title,
+            description: post.metaDescription || post.excerpt,
+            images: post.coverImage ? [post.coverImage] : [],
+        }
+    };
+} // Revalidate every hour
 
 export async function generateStaticParams() {
     const posts = await prisma.post.findMany({

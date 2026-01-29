@@ -14,6 +14,7 @@ export default function PageForm() {
 
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [metaDescription, setMetaDescription] = useState("");
     const [published, setPublished] = useState(false);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
@@ -30,6 +31,7 @@ export default function PageForm() {
             const data = await res.json();
             setTitle(data.title);
             setContent(data.content);
+            setMetaDescription(data.metaDescription || "");
             setPublished(data.published);
         } catch (error) {
             console.error("Error fetching page:", error);
@@ -49,7 +51,7 @@ export default function PageForm() {
             await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, published }),
+                body: JSON.stringify({ title, content, metaDescription, published }),
             });
 
             router.push("/admin/manage-pages");
@@ -88,6 +90,18 @@ export default function PageForm() {
                         placeholder="e.g., About Us"
                         required
                     />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Meta Description (SEO)</label>
+                    <textarea
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-24 resize-none"
+                        placeholder="SEO meta description (150-160 characters recommended)..."
+                        maxLength={160}
+                    />
+                    <p className="text-xs text-slate-400">{metaDescription.length}/160 characters</p>
                 </div>
 
                 <div className="space-y-2">

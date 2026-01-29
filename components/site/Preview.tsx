@@ -258,6 +258,24 @@ export default function Preview({
           backgroundImage: 'url("https://www.transparenttextures.com/patterns/concrete-wall-2.png")',
           padding: '4rem',
         };
+      case 'wishlist-1':
+        return {
+          ...baseStyle,
+          backgroundColor: '#fff',
+          padding: '6rem 4rem 8rem 4rem',
+          backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px)',
+          backgroundSize: `100% ${fontSize * lineHeight}px`,
+        };
+      case 'wishlist-2':
+        return { ...baseStyle, backgroundColor: '#fff3ed', padding: '6rem 4rem 10rem 4rem' };
+      case 'wishlist-3':
+        return { ...baseStyle, backgroundColor: '#fff8f6', padding: '8rem 5rem' };
+      case 'wishlist-4':
+        return { ...baseStyle, backgroundColor: '#fff', padding: '6rem 4rem 12rem 4rem' };
+      case 'wishlist-5':
+        return { ...baseStyle, backgroundColor: '#fff5f2', padding: '10rem 5rem 6rem 5rem' };
+      case 'border-2':
+        return { ...baseStyle, backgroundColor: '#fff', padding: '6rem' };
       default:
         return {
           ...baseStyle,
@@ -364,6 +382,77 @@ export default function Preview({
               <div className="absolute inset-0 border-[2px] border-amber-900/20 m-4" />
               <div className="absolute top-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
+            </div>
+          )}
+
+          {/* Wishlist Designs */}
+          {paper === 'wishlist-1' && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 border-[24px] border-sky-100/50" />
+              <div className="absolute bottom-4 left-4 text-8xl">🍄</div>
+              <div className="absolute top-0 right-0 p-8 text-4xl">🍃</div>
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-bold text-sky-800 tracking-widest uppercase">Wishlist</div>
+            </div>
+          )}
+
+          {paper === 'wishlist-2' && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 border-[20px] border-orange-50" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end gap-2 pb-4">
+                <span className="text-7xl">🎁</span>
+                <span className="text-6xl pb-2">🌺</span>
+              </div>
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-serif italic text-orange-800">Wish List</div>
+            </div>
+          )}
+
+          {paper === 'wishlist-3' && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 right-0 h-24 flex justify-around items-center px-8">
+                <span className="text-3xl">🎄</span>
+                <span className="text-4xl italic font-serif text-red-800">Wish List</span>
+                <span className="text-3xl">🎅</span>
+              </div>
+              <div className="absolute inset-x-0 top-24 bottom-0 border-x-[30px] border-b-[30px] border-emerald-50/30">
+                <div className="absolute -top-4 left-0 text-2xl">🔔</div>
+                <div className="absolute -top-4 right-0 text-2xl">🍭</div>
+              </div>
+            </div>
+          )}
+
+          {paper === 'wishlist-4' && (
+            <div className="absolute inset-0 pointer-events-none border-[30px] border-orange-400">
+              <div className="absolute inset-0 border-[4px] border-white m-1" />
+              <div className="absolute top-4 left-4 text-white font-black text-xs uppercase tracking-tighter">My Wishlist</div>
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-8 translate-y-4">
+                <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👑</div>
+                <div className="w-24 h-24 bg-orange-100 rounded-full border-4 border-white flex items-center justify-center text-5xl shadow-lg">🤴</div>
+                <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👳</div>
+              </div>
+            </div>
+          )}
+
+          {paper === 'wishlist-5' && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 right-0 bg-red-50/50 p-12 text-center">
+                <span className="text-5xl block mb-2">🌺 🍃 🌺</span>
+                <span className="text-4xl font-serif italic text-red-900">Wish List</span>
+              </div>
+              <div className="absolute bottom-4 right-4 text-6xl opacity-20">🌿</div>
+            </div>
+          )}
+
+          {paper === 'border-2' && (
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Corner Triangles */}
+              <div className="absolute top-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#fb923c22' }} />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 100% 0)', backgroundColor: '#fb923c22' }} />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
+
+              {/* Accents */}
+              <div className="absolute top-8 left-8 w-16 h-16 border-t-4 border-l-4 border-orange-400" />
+              <div className="absolute bottom-8 right-8 w-16 h-16 border-b-4 border-r-4 border-orange-400" />
             </div>
           )}
 

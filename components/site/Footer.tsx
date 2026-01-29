@@ -34,6 +34,7 @@ const Footer = () => {
         fetchMenus();
     }, []);
 
+
     const defaultNav = [
         { label: 'Home', url: '/' },
         { label: 'Convert Tool', url: '#convert' },
@@ -50,8 +51,21 @@ const Footer = () => {
         { label: 'Feedback', url: '#' }
     ];
 
-    const navItems = footerNav.length > 0 ? footerNav : defaultNav;
+    // Always include Home as the first item
+    const homeItem = { label: 'Home', url: '/' };
+
+    // If there are custom menu items from database, use them but ensure Home is first
+    let navItems;
+    if (footerNav.length > 0) {
+        // Filter out any existing Home item from database to avoid duplicates
+        const filteredNav = footerNav.filter((item: any) => item.url !== '/' && item.label.toLowerCase() !== 'home');
+        navItems = [homeItem, ...filteredNav];
+    } else {
+        navItems = defaultNav;
+    }
+
     const helpItems = footerHelp.length > 0 ? footerHelp : defaultHelp;
+
 
     return (
         <footer className="bg-[#1e355e] text-[#eae3db] pt-20 pb-10 relative overflow-hidden ">
@@ -68,7 +82,7 @@ const Footer = () => {
                             <img
                                 src="/logo.png"
                                 alt="Handwriting Studio Logo"
-                                className="h-14 w-auto object-contain brightness-0 invert"
+                                className="h-10 md:h-14 w-auto object-contain brightness-0 invert"
                             />
                         </Link>
 

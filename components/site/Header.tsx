@@ -57,7 +57,7 @@ export default function Header() {
           <img
             src="/logo.png"
             alt="Handwriting Studio Logo"
-            className="h-12 w-auto object-contain transition-transform group-hover:scale-110"
+            className="h-8 md:h-12 w-auto object-contain transition-transform group-hover:scale-110"
           />
         </Link>
 

@@ -20,8 +20,8 @@ export default function Hero() {
           Beautiful Handwriting
         </h2>
         {/* Pencil Icon Decoration */}
-        <span className="absolute -right-12 -top-4 text-4xl transform rotate-12">✏️</span>
-        <span className="absolute -right-8 -top-8 text-2xl text-orange-400">✨</span>
+        <span className="hidden md:block absolute -right-12 -top-4 text-4xl transform rotate-12">✏️</span>
+        <span className="hidden md:block absolute -right-8 -top-8 text-2xl text-orange-400">✨</span>
       </div>
 
       {/* Description */}

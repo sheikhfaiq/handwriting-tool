@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
+const prismaAny = prisma as any;
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import slugify from "slugify";
 
 export async function GET() {
     try {
-        const pages = await prisma.page.findMany({
+        const pages = await prismaAny.page.findMany({
             orderBy: { createdAt: "desc" },
         });
         return NextResponse.json(pages);
@@ -23,13 +25,14 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, content, published } = await req.json();
+        const { title, content, metaDescription, published } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
-        const page = await prisma.page.create({
+        const page = await prismaAny.page.create({
             data: {
                 title,
                 content,
+                metaDescription,
                 published: published || false,
                 slug,
             },

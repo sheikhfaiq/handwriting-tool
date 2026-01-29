@@ -31,7 +31,7 @@ interface ControlsProps {
 }
 
 const fonts = [
-  { name: 'Casual Script', value: 'var(--font-indie-flower)' },
+  { name: 'Indie Flower', value: 'var(--font-indie-flower)' },
   { name: 'Handwritten', value: 'var(--font-caveat)' },
   { name: 'Neat Print', value: 'var(--font-shadows)' },
   { name: 'Cursive', value: 'var(--font-dancing)' },
@@ -44,6 +44,9 @@ const fonts = [
   { name: 'Cedarville', value: 'var(--font-cedarville)' },
   { name: 'Homemade', value: 'var(--font-homemade)' },
   { name: 'Schoolbell', value: 'var(--font-schoolbell)' },
+  { name: 'Satisfy', value: 'var(--font-satisfy)' },
+  { name: 'Crafty Girls', value: 'var(--font-crafty-girls)' },
+  { name: 'Swanky Moo', value: 'var(--font-swanky-moo)' },
 ];
 
 const papers = [
@@ -64,6 +67,12 @@ const papers = [
   { name: 'Geometric Modern', value: 'geometric' },
   { name: 'Classic Scroll', value: 'classic-scroll' },
   { name: 'Antique Blue', value: 'antique-blue' },
+  { name: 'Wishlist (Forest)', value: 'wishlist-1' },
+  { name: 'Wishlist (Gift)', value: 'wishlist-2' },
+  { name: 'Wishlist (Christmas)', value: 'wishlist-3' },
+  { name: 'Wishlist (Kings)', value: 'wishlist-4' },
+  { name: 'Wishlist (Floral)', value: 'wishlist-5' },
+  { name: 'Border (Geometric)', value: 'border-2' },
 ];
 
 const inkColors = [
