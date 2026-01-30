@@ -77,6 +77,21 @@ export async function DELETE(
 
     try {
         const params = await props.params;
+
+        // 1. Get the post slug before deleting
+        const post = await (prisma as any).post.findUnique({
+            where: { id: params.id },
+            select: { slug: true }
+        });
+
+        // 2. Delete associated menu items if post exists
+        // Assuming blog posts are served at /blog/[slug]
+        if (post?.slug) {
+            await (prisma as any).menuItem.deleteMany({
+                where: { url: `/blog/${post.slug}` }
+            });
+        }
+
         await prisma.post.delete({
             where: { id: params.id },
         });

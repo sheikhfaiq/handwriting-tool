@@ -9,9 +9,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [navLinks, setNavLinks] = useState([
     { name: "Home", href: "/" },
-    { name: "Why Us", href: "#why-us" },
-    { name: "Use Cases", href: "#use-cases" },
-    { name: "FAQ", href: "#faqs" },
+    { name: "Blog", href: "/blog" },
   ]);
   const pathname = usePathname();
 

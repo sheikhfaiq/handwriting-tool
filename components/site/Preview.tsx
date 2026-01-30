@@ -61,6 +61,7 @@ export default function Preview({
   const renderedText = useMemo(() => {
     const text = pages[currentPage] || '';
     const lines = text.split('\n');
+    const rowHeight = fontSize * lineHeight;
 
     return lines.map((line, lineIndex) => {
       // Check for Heading levels (H1-H6)
@@ -149,12 +150,12 @@ export default function Preview({
       });
 
       return (
-        <div key={lineIndex} style={{ minHeight: '1.2em' }}>
+        <div key={lineIndex} style={{ height: `${rowHeight}px`, position: 'relative', whiteSpace: 'nowrap' }}>
           {renderedLine}
         </div>
       );
     });
-  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing]);
+  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing, fontSize, lineHeight]);
 
   const getPaperStyle = () => {
     const baseStyle = {
@@ -164,58 +165,87 @@ export default function Preview({
       fontFamily: font,
     };
 
+    const bottomLineGradient = (color: string) =>
+      `linear-gradient(transparent calc(100% - 1px), ${color} calc(100% - 1px))`;
+
+    // Offset to align baseline with the bottom line. 
+    // Handwritings usually float ~0.44em above the bottom of the line-height box.
+    const yOffset = '0.44em';
+
     switch (paper) {
-      case 'ruled':
+      case 'ruled': {
+        const paddingTop = '0.5rem'; // 8px
+        const paddingLeft = '4.5rem';
         return {
           ...baseStyle,
-          backgroundImage: 'linear-gradient(#9ca3af 1px, transparent 1px)',
+          backgroundImage: bottomLineGradient('#9ca3af'),
           backgroundSize: `100% ${fontSize * lineHeight}px`,
+          backgroundPosition: `0 calc(${paddingTop} - ${yOffset})`,
           backgroundColor: '#fff',
-          paddingTop: '0.5rem',
-          paddingLeft: '4.5rem',
+          paddingTop,
+          paddingLeft,
         };
+      }
       case 'vintage':
         return {
           ...baseStyle,
           backgroundColor: '#fef3c7',
           backgroundImage: 'url("https://www.transparenttextures.com/patterns/aged-paper.png")',
         };
-      case 'grid':
+      case 'grid': {
+        const padding = '3rem';
         return {
           ...baseStyle,
           backgroundColor: '#fff',
+          // Grid lines usually at top/left. We shift up so bottom of cell aligns with baseline
           backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
           backgroundSize: '20px 20px',
+          backgroundPosition: `${padding} calc(${padding} - ${yOffset})`,
+          padding,
         };
-      case 'assignment-1':
+      }
+      case 'assignment-1': {
+        const paddingTop = '3rem';
+        const paddingLeft = '2rem';
+        const paddingRight = '2rem';
         return {
           ...baseStyle,
           backgroundColor: '#fff',
-          backgroundImage: 'linear-gradient(#9ca3af 1px, transparent 1px)',
+          backgroundImage: bottomLineGradient('#9ca3af'),
           backgroundSize: `100% ${fontSize * lineHeight}px`,
-          padding: '3rem 2rem 2rem 2rem',
+          backgroundPosition: `0 calc(${paddingTop} - ${yOffset})`,
+          padding: `${paddingTop} ${paddingRight} 2rem ${paddingLeft}`,
           border: '1px solid #d1d5db',
           boxShadow: 'inset 0 0 0 4px #fff, inset 0 0 0 6px #374151',
         };
-      case 'assignment-2':
+      }
+      case 'assignment-2': {
+        const paddingTop = '3rem';
+        const paddingH = '3rem';
         return {
           ...baseStyle,
           backgroundColor: '#fff',
-          backgroundImage: 'linear-gradient(#9ca3af 1px, transparent 1px)',
+          backgroundImage: bottomLineGradient('#9ca3af'),
           backgroundSize: `100% ${fontSize * lineHeight}px`,
-          padding: '3rem 3rem 3rem 3rem',
+          backgroundPosition: `0 calc(${paddingTop} - ${yOffset})`,
+          padding: `${paddingTop} ${paddingH} 3rem ${paddingH}`,
           border: '1px solid #d1d5db',
           boxShadow: 'inset 0 0 0 15px #fff, inset 0 0 0 18px #1e355e',
         };
-      case 'notebook-margin':
+      }
+      case 'notebook-margin': {
+        const paddingTop = '0.5rem';
+        const paddingLeft = '4rem';
         return {
           ...baseStyle,
           backgroundColor: '#fff',
-          backgroundImage: 'linear-gradient(#9ca3af 1px, transparent 1px)',
+          backgroundImage: bottomLineGradient('#9ca3af'),
           backgroundSize: `100% ${fontSize * lineHeight}px`,
-          paddingTop: '0.5rem',
-          paddingLeft: '4rem',
+          backgroundPosition: `0 calc(${paddingTop} - ${yOffset})`,
+          paddingTop,
+          paddingLeft,
         };
+      }
       case 'floral-rose':
         return { ...baseStyle, backgroundColor: '#fffafb', padding: '5rem' };
       case 'floral-lavender':
@@ -236,15 +266,18 @@ export default function Preview({
           backgroundImage: 'url("https://www.transparenttextures.com/patterns/natural-paper.png")',
           padding: '4rem',
         };
-      case 'blueprint':
+      case 'blueprint': {
+        const padding = '4rem';
         return {
           ...baseStyle,
           backgroundColor: '#1e40af',
           color: '#bfdbfe',
           backgroundImage: 'linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px)',
           backgroundSize: '40px 40px',
-          padding: '4rem',
+          backgroundPosition: `${padding} calc(${padding} - ${yOffset})`,
+          padding,
         };
+      }
       case 'heart-border':
         return { ...baseStyle, backgroundColor: '#fff', padding: '5rem' };
       case 'geometric':
@@ -258,14 +291,19 @@ export default function Preview({
           backgroundImage: 'url("https://www.transparenttextures.com/patterns/concrete-wall-2.png")',
           padding: '4rem',
         };
-      case 'wishlist-1':
+      case 'wishlist-1': {
+        const paddingTop = '6rem';
+        const paddingBottom = '8rem';
+        const paddingH = '4rem';
         return {
           ...baseStyle,
           backgroundColor: '#fff',
-          padding: '6rem 4rem 8rem 4rem',
-          backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px)',
+          padding: `${paddingTop} ${paddingH} ${paddingBottom} ${paddingH}`,
+          backgroundImage: bottomLineGradient('#e5e7eb'),
           backgroundSize: `100% ${fontSize * lineHeight}px`,
+          backgroundPosition: `0 calc(${paddingTop} - ${yOffset})`,
         };
+      }
       case 'wishlist-2':
         return { ...baseStyle, backgroundColor: '#fff3ed', padding: '6rem 4rem 10rem 4rem' };
       case 'wishlist-3':

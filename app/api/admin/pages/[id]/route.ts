@@ -70,6 +70,20 @@ export async function DELETE(
 
     try {
         const params = await props.params;
+
+        // 1. Get the page slug before deleting
+        const page = await prismaAny.page.findUnique({
+            where: { id: params.id },
+            select: { slug: true }
+        });
+
+        // 2. Delete associated menu items if page exists
+        if (page?.slug) {
+            await prismaAny.menuItem.deleteMany({
+                where: { url: `/${page.slug}` }
+            });
+        }
+
         await prismaAny.page.delete({
             where: { id: params.id },
         });

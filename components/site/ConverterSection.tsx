@@ -59,7 +59,10 @@ export default function ConverterSection() {
     }
 
     // Adjust usable width/height
-    const availableWidth = PAGE_WIDTH - (horizontalMarginLeft + horizontalMarginRight);
+    // Subtract a safety buffer (e.g. 20px) to account for:
+    // 1. Rotation and Skew increasing character bounding boxes.
+    // 2. Browser rendering variations.
+    const availableWidth = PAGE_WIDTH - (horizontalMarginLeft + horizontalMarginRight) - 20;
 
     // We need to measure the text precisely using the DOM
     const measureDiv = document.createElement('div');
@@ -106,38 +109,81 @@ export default function ConverterSection() {
         if (word === '') continue;
 
         // Measure word width
-        measureDiv.textContent = word;
-        // Add spacing adjustment: (word.length - 1) * wordSpacing, plus wordSpacing after?
-        // In Preview, wordSpacing is applied to EACH char.
-        // So total width += length * wordSpacing.
-        let wordWidth = measureDiv.offsetWidth + (word.length * wordSpacing);
+        // IMPORTANT: Preview.tsx renders each character in its own <span> with display: inline-block.
+        // This removes kerning and changes layout behavior.
+        // We must measure EACH character individually and sum them to match the Preview exactly.
+
+        let wordWidth = 0;
+        for (let charIndex = 0; charIndex < word.length; charIndex++) {
+          measureDiv.textContent = word[charIndex];
+          wordWidth += measureDiv.offsetWidth;
+        }
+
+        // Add spacing adjustment: wordSpacing is applied to EACH char in Preview
+        wordWidth += (word.length * wordSpacing);
 
         if (currentLineWidth + wordWidth > availableWidth) {
-          // Use a tolerance?
           if (currentLineWidth > 0) {
-            // Wrap
+            // If we have content on this line, wrap to next line first
             currentPageLines++;
             if (currentPageLines >= maxLinesPerPage) {
               newPages.push(currentPageContent);
               currentPageContent = '';
               currentPageLines = 0;
             }
-            currentLineWidth = wordWidth;
+            currentPageContent += '\n'; // visual wrap
+            currentLineWidth = 0;
+            // Fall through to process the word on the new line
+          }
+
+          // Now we are at the start of a line (currentLineWidth is 0 or we just wrapped).
+          // Check if the word ITSELF is too big to fit on a single line.
+          if (wordWidth > availableWidth) {
+            // We need to split this word character by char
+            let currentSubWord = '';
+            let currentSubWidth = 0;
+
+            for (let k = 0; k < word.length; k++) {
+              const char = word[k];
+              measureDiv.textContent = char;
+              const charWidth = measureDiv.offsetWidth + wordSpacing;
+
+              if (currentSubWidth + charWidth > availableWidth) {
+                // This char would overflow, push currentSubWord and wrap
+                currentPageContent += currentSubWord;
+                // Add hard break for the split
+                currentPageContent += '\n';
+                currentPageLines++;
+
+                if (currentPageLines >= maxLinesPerPage) {
+                  newPages.push(currentPageContent);
+                  currentPageContent = '';
+                  currentPageLines = 0;
+                }
+
+                currentSubWord = char;
+                currentSubWidth = charWidth;
+              } else {
+                currentSubWord += char;
+                currentSubWidth += charWidth;
+              }
+            }
+            // Add the remainder
+            currentPageContent += currentSubWord;
+            currentLineWidth = currentSubWidth;
+
           } else {
-            // Word is wider than entire line, forced break or clip
-            currentPageLines++;
-            if (currentPageLines >= maxLinesPerPage) {
-              newPages.push(currentPageContent);
-              currentPageContent = '';
-              currentPageLines = 0;
-            }
+            // Word fits on a fresh line
+            currentPageContent += word;
             currentLineWidth = wordWidth;
           }
         } else {
+          // Word fits on current line
+          currentPageContent += word;
           currentLineWidth += wordWidth;
         }
 
-        currentPageContent += word;
+
       }
 
       if (i < paragraphs.length - 1) {
