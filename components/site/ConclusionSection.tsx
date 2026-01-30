@@ -21,7 +21,7 @@ const ConclusionSection = () => {
                 <div className="relative">
                     {/* Stylized accent line */}
                     <p className="text-gray-600 text-xl md:text-2xl leading-relaxed font-medium italic">
-                        "A Text to Handwriting Converter is a powerful and practical tool for anyone who needs handwritten text without manual writing. It saves time, reduces effort, and produces clean, readable handwriting. With useful features, multiple benefits, and a simple interface, it is an ideal solution for students, teachers, and professionals. If you want fast, neat, and reliable handwritten text, a Text to Handwriting Converter is the perfect choice."
+                        "A Text to Handwriting Converter is a powerful and practical tool for anyone who needs handwritten text without manual writing. Handwriting converter saves time, reduces effort, and produces clean, readable handwriting. With useful features, multiple benefits, and a simple interface, it is an ideal solution for students, teachers, and professionals. If you want fast, neat, and reliable handwritten text, a word to handwriting converter is the perfect choice."
                     </p>
                 </div>
             </div>

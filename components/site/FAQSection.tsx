@@ -8,12 +8,12 @@ const FAQSection = () => {
 
     const faqs = [
         {
-            question: "What is a Text to Handwriting Converter used for?",
-            answer: "It converts typed text into a handwritten style"
+            question: "What is a text to handwriting generator used for?",
+            answer: "It converts typed text into a handwritten style."
         },
         {
-            question: "Is the tool free to use?",
-            answer: "Yes, our Text-to-Handwriting Converter is free."
+            question: "Is the text to handwriting free to use?",
+            answer: "Yes, our convert text to handwriting tool is free."
         },
         {
             question: "Does it work on mobile devices?",

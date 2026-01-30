@@ -146,19 +146,7 @@ export const metadata: Metadata = {
     default: "Text To Handwriting - Free Online Handwriting Converter",
     template: "%s | Text To Handwriting"
   },
-  description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds. Download as PNG or PDF.",
-  keywords: [
-    "text to handwriting",
-    "handwriting converter",
-    "text to handwriting converter",
-    "online handwriting generator",
-    "handwriting font",
-    "convert text to handwriting",
-    "handwritten notes",
-    "handwriting tool",
-    "free handwriting converter",
-    "digital handwriting"
-  ],
+  description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds.",
   authors: [{ name: "Text To Handwriting" }],
   creator: "Text To Handwriting",
   publisher: "Text To Handwriting",

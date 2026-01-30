@@ -78,7 +78,11 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16 ">
                     {/* Brand Section */}
                     <div className="flex flex-col gap-4 mt-16">
-                        <Link href="/" className="flex items-center gap-3 group">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-3 group"
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        >
                             <img
                                 src="/logo.png"
                                 alt="Handwriting Studio Logo"

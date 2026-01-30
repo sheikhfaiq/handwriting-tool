@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, Menu, Bold, Italic, Underline, ChevronDown, PenLine } from 'lucide-react';
+import { Type, Menu, Bold, Italic, Underline, ChevronDown, PenLine, List } from 'lucide-react';
 
 interface ControlsProps {
   text: string;
@@ -10,6 +10,8 @@ interface ControlsProps {
   setPaper: (paper: string) => void;
   inkColor: string;
   setInkColor: (color: string) => void;
+  headingColor: string;
+  setHeadingColor: (color: string) => void;
   slant: number;
   setSlant: (slant: number) => void;
   rotate: number;
@@ -92,6 +94,8 @@ export default function Controls({
   setPaper,
   inkColor,
   setInkColor,
+  headingColor,
+  setHeadingColor,
   slant,
   setSlant,
   rotate,
@@ -129,6 +133,48 @@ export default function Controls({
     }, 0);
   };
 
+  const insertList = (bullet: string) => {
+    const textarea = document.querySelector('textarea');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    if (start !== end) {
+      // Apply to selected lines
+      const selectedText = text.substring(start, end);
+      const lines = selectedText.split('\n');
+      const newLines = lines.map(line => line.trim().length > 0 ? `${bullet} ${line}` : line);
+      const newSelectedText = newLines.join('\n');
+
+      const newText = text.substring(0, start) + newSelectedText + text.substring(end);
+      setText(newText);
+
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start, start + newSelectedText.length);
+      }, 0);
+    } else {
+      // Apply to current line
+      const textLines = text.substring(0, start).split('\n');
+      const currentLineIndex = textLines.length - 1;
+      const allLines = text.split('\n');
+      const currentLine = allLines[currentLineIndex];
+
+      allLines[currentLineIndex] = `${bullet} ${currentLine}`;
+
+      const newText = allLines.join('\n');
+      setText(newText);
+
+      setTimeout(() => {
+        textarea.focus();
+        const validLines = allLines.slice(0, currentLineIndex + 1);
+        const newPos = validLines.join('\n').length;
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-200">
       {/* Header */}
@@ -137,7 +183,8 @@ export default function Controls({
           <PenLine size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Text to Handwriting</h2>
+          <h2 className="text-xl font-bold">Turn text into handwriting
+          </h2>
           <p className="text-white/70 text-sm">Type or paste your text here</p>
         </div>
       </div>
@@ -251,6 +298,45 @@ export default function Controls({
                   </button>
                 ))}
               </div>
+
+              {/* Lists */}
+              <div className="flex gap-2 border-l border-gray-200 pl-3">
+                <button
+                  onClick={() => insertList('•')}
+                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
+                  title="Bullet List"
+                >
+                  <List size={16} />
+                </button>
+                <button
+                  onClick={() => insertList('◦')}
+                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
+                  title="Hollow Bullet"
+                >
+                  ◦
+                </button>
+                <button
+                  onClick={() => insertList('-')}
+                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
+                  title="Dash List"
+                >
+                  -
+                </button>
+                <button
+                  onClick={() => insertList('★')}
+                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
+                  title="Star List"
+                >
+                  ★
+                </button>
+                <button
+                  onClick={() => insertList('>')}
+                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
+                  title="Arrow List"
+                >
+                  &gt;
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -317,6 +403,24 @@ export default function Controls({
               </div>
             </div>
 
+            {/* Heading Color */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Heading Color</label>
+              <div className="relative group">
+                <select
+                  value={headingColor}
+                  onChange={(e) => setHeadingColor(e.target.value)}
+                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-700 appearance-none cursor-pointer focus:bg-white focus:border-[#3B527E] outline-none transition-all"
+                >
+                  {inkColors.map((c) => (
+                    <option key={c.value} value={c.value}>{c.name}</option>
+                  ))}
+                </select>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-gray-100 shadow-sm" style={{ backgroundColor: headingColor }} />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-gray-600 transition-colors" size={16} />
+              </div>
+            </div>
+
             {/* Font Size */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between">
@@ -345,8 +449,8 @@ export default function Controls({
                 max="3"
                 step="0.1"
                 value={lineHeight}
-                onChange={(e) => setLineHeight(Number(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#3B527E]"
+                onChange={(e) => setLineHeight(parseFloat(e.target.value))}
+                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#3B527E]"
               />
             </div>
 

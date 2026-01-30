@@ -5,7 +5,6 @@ import ConverterSection from "@/components/site/ConverterSection";
 import UseCasesSection from "@/components/site/UseCasesSection";
 import FAQSection from "@/components/site/FAQSection";
 import ConclusionSection from "@/components/site/ConclusionSection";
-import Footer from "@/components/site/Footer";
 
 export default function Home() {
   return (

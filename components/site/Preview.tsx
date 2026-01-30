@@ -7,6 +7,7 @@ interface PreviewProps {
   font: string;
   paper: string;
   inkColor: string;
+  headingColor: string;
   slant: number;
   rotate: number;
   wobble: number;
@@ -33,6 +34,7 @@ export default function Preview({
   font,
   paper,
   inkColor,
+  headingColor,
   slant,
   rotate,
   wobble,
@@ -61,15 +63,22 @@ export default function Preview({
   const renderedText = useMemo(() => {
     const text = pages[currentPage] || '';
     const lines = text.split('\n');
-    const rowHeight = fontSize * lineHeight;
-
     return lines.map((line, lineIndex) => {
       // Check for Heading levels (H1-H6)
       const headingMatch = line.match(/^(#{1,6})\s/);
       const headingLevel = headingMatch ? headingMatch[1].length : 0;
       const cleanLine = headingLevel > 0 ? line.substring(headingLevel + 1) : line;
 
-      // Font sizes for H1-H6
+      // Font sizes and scales for H1-H6
+      const headingScales: Record<number, number> = {
+        1: 2,
+        2: 1.75,
+        3: 1.5,
+        4: 1.3,
+        5: 1.2,
+        6: 1.1,
+      };
+
       const headingFontSizes: Record<number, string> = {
         1: '2em',
         2: '1.75em',
@@ -78,6 +87,10 @@ export default function Preview({
         5: '1.2em',
         6: '1.1em',
       };
+
+      // Calculate dynamic row height
+      const scale = headingLevel > 0 ? headingScales[headingLevel] : 1;
+      const dynamicRowHeight = fontSize * lineHeight * scale;
 
       const parts = [];
       let remaining = cleanLine;
@@ -140,7 +153,11 @@ export default function Preview({
                 fontStyle: isItalic ? 'italic' : 'normal',
                 textDecoration: isUnderline ? 'underline' : 'none',
                 fontSize: headingLevel > 0 ? headingFontSizes[headingLevel] : '1em',
+                color: headingLevel > 0 ? headingColor : 'inherit', // Apply heading color
                 marginRight: `${wordSpacing}px`,
+                // Ensure text aligns to the bottom of the larger row height if needed, 
+                // but usually inline-block scales with font-size. 
+                // Vertical align might be needed if mixed content, but here line is uniform.
               }}
             >
               {char}
@@ -150,12 +167,18 @@ export default function Preview({
       });
 
       return (
-        <div key={lineIndex} style={{ height: `${rowHeight}px`, position: 'relative', whiteSpace: 'nowrap' }}>
+        <div key={lineIndex} style={{
+          height: `${dynamicRowHeight}px`,
+          position: 'relative',
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'baseline' // Align text to baseline
+        }}>
           {renderedLine}
         </div>
       );
     });
-  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing, fontSize, lineHeight]);
+  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing, fontSize, lineHeight, headingColor, inkColor]);
 
   const getPaperStyle = () => {
     const baseStyle = {
@@ -169,8 +192,30 @@ export default function Preview({
       `linear-gradient(transparent calc(100% - 1px), ${color} calc(100% - 1px))`;
 
     // Offset to align baseline with the bottom line. 
-    // Handwritings usually float ~0.44em above the bottom of the line-height box.
-    const yOffset = '0.44em';
+    // Handwritings usually float above the bottom of the line-height box.
+    // Each font needs a slightly different offset to sit perfectly on the line.
+    // Normalized to ~0.64em, plus user adjustable offset.
+    const fontBaselineOffsets: Record<string, string> = {
+      'var(--font-indie-flower)': '0.64em',
+      'var(--font-caveat)': '0.55em',
+      'var(--font-shadows)': '0.64em',
+      'var(--font-dancing)': '0.62em',
+      'var(--font-permanent)': '0.60em',
+      'var(--font-sacramento)': '0.50em',
+      'var(--font-gloria)': '0.64em',
+      'var(--font-kalam)': '0.64em',
+      'var(--font-patrick)': '0.62em',
+      'var(--font-architects)': '0.64em',
+      'var(--font-cedarville)': '0.75em', // Needs more
+      'var(--font-homemade)': '0.75em',
+      'var(--font-schoolbell)': '0.64em',
+      'var(--font-satisfy)': '0.64em',
+      'var(--font-crafty-girls)': '0.64em',
+      'var(--font-swanky-moo)': '0.68em',
+    };
+
+    // Base offset from map or default
+    const yOffset = fontBaselineOffsets[font] || '0.64em';
 
     switch (paper) {
       case 'ruled': {
@@ -328,7 +373,8 @@ export default function Preview({
       <div className="bg-[#3B527E] p-6 text-white flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">Preview</h2>
-          <p className="text-white/70 text-sm">See your handwriting </p>
+          <p className="text-white/70 text-sm">See your handwriting typing
+          </p>
         </div>
         <div className="flex gap-2">
           <button

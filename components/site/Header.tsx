@@ -76,6 +76,12 @@ export default function Header() {
           <Link
             href="/#convert"
             className="bg-[#1e355e] text-white px-8 py-3 rounded-full font-bold transition-all duration-300 shadow-xl shadow-indigo-900/10 hover:bg-blue-600 hover:scale-105 active:scale-95 flex items-center gap-2 text-sm tracking-wide"
+            onClick={(e) => {
+              if (pathname === "/") {
+                e.preventDefault();
+                document.getElementById("convert")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
           >
             Start Writing
           </Link>
@@ -109,7 +115,13 @@ export default function Header() {
           <Link
             href="/#convert"
             className="text-center text-white px-6 py-4 rounded-2xl font-black bg-[#1e355e] transition-all shadow-xl hover:scale-[1.02]"
-            onClick={() => setIsMenuOpen(false)}
+            onClick={(e) => {
+              setIsMenuOpen(false);
+              if (pathname === "/") {
+                e.preventDefault();
+                document.getElementById("convert")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
           >
             Start Writing
           </Link>

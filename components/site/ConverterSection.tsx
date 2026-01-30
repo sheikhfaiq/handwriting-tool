@@ -12,11 +12,12 @@ export default function ConverterSection() {
   const [font, setFont] = useState('var(--font-indie-flower)');
   const [paper, setPaper] = useState('ruled');
   const [inkColor, setInkColor] = useState('#1e3a8a');
+  const [headingColor, setHeadingColor] = useState('#1e3a8a');
   const [slant, setSlant] = useState(0);
   const [rotate, setRotate] = useState(0);
   const [wobble, setWobble] = useState(0);
   const [fontSize, setFontSize] = useState(24);
-  const [lineHeight, setLineHeight] = useState(1.5);
+  const [lineHeight, setLineHeight] = useState(2);
   const [wordSpacing, setWordSpacing] = useState(0);
   const [pageTitle, setPageTitle] = useState('');
   const [pageDate, setPageDate] = useState('');
@@ -28,6 +29,7 @@ export default function ConverterSection() {
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // Pagination Logic
   // Pagination Logic
   useEffect(() => {
     if (!text) {
@@ -59,9 +61,6 @@ export default function ConverterSection() {
     }
 
     // Adjust usable width/height
-    // Subtract a safety buffer (e.g. 20px) to account for:
-    // 1. Rotation and Skew increasing character bounding boxes.
-    // 2. Browser rendering variations.
     const availableWidth = PAGE_WIDTH - (horizontalMarginLeft + horizontalMarginRight) - 20;
 
     // We need to measure the text precisely using the DOM
@@ -75,15 +74,57 @@ export default function ConverterSection() {
 
     document.body.appendChild(measureDiv);
 
-    // Calculate lines per page
-    // Content height is influenced by line-height * font-size
-    const singleLineHeightPx = fontSize * lineHeight;
-    const availableHeight = PAGE_HEIGHT - (verticalMarginTop + verticalMarginBottom);
-    const maxLinesPerPage = Math.floor(availableHeight / singleLineHeightPx);
+    // Calculate lines per page using Pixel Height
+    const baseLineHeightPx = fontSize * lineHeight;
+    // Subtract a safety buffer (e.g. 40px) to ensure we don't write to the very edge and risk clipping
+    const safetyBuffer = 40;
+    const availableHeight = PAGE_HEIGHT - (verticalMarginTop + verticalMarginBottom + safetyBuffer);
 
     const newPages: string[] = [];
-    let currentPageLines = 0;
+    let currentHeightUsed = 0;
     let currentPageContent = '';
+
+    // Helper to add a visual line to the current page
+    const addLineToPage = (lineContent: string) => {
+      // Determine height of this specific line
+      const headingMatch = lineContent.match(/^(#{1,6})\s/);
+      const headingLevel = headingMatch ? headingMatch[1].length : 0;
+
+      let scale = 1;
+      if (headingLevel > 0) {
+        const headingScales: Record<number, number> = {
+          1: 2, 2: 1.75, 3: 1.5, 4: 1.3, 5: 1.2, 6: 1.1,
+        };
+        scale = headingScales[headingLevel] || 1;
+      }
+
+      const thisLineHeight = baseLineHeightPx * scale;
+
+      // Check if this line fits
+      if (currentHeightUsed + thisLineHeight > availableHeight) {
+        // Push current page
+        // If currentPageContent is empty, it means this single line is HUGE or we just started.
+        // But usually it means we are overflowing.
+        if (currentPageContent.length > 0) {
+          newPages.push(currentPageContent);
+          currentPageContent = lineContent;
+          currentHeightUsed = thisLineHeight;
+        } else {
+          // Edge case: Line is taller than entire page? Just add it.
+          newPages.push(lineContent);
+          currentPageContent = '';
+          currentHeightUsed = 0;
+        }
+      } else {
+        // Fits on current page
+        if (currentPageContent.length > 0) {
+          currentPageContent += '\n' + lineContent;
+        } else {
+          currentPageContent = lineContent;
+        }
+        currentHeightUsed += thisLineHeight;
+      }
+    };
 
     const paragraphs = text.split('\n');
 
@@ -91,55 +132,40 @@ export default function ConverterSection() {
       const paragraph = paragraphs[i];
 
       if (paragraph === '') {
-        if (currentPageLines + 1 > maxLinesPerPage) {
-          newPages.push(currentPageContent);
-          currentPageContent = '';
-          currentPageLines = 0;
-        }
-        currentPageContent += '\n';
-        currentPageLines++;
+        addLineToPage('');
         continue;
       }
 
       const words = paragraph.split(/(\s+)/);
       let currentLineWidth = 0;
+      let currentLineBuffer = '';
+
+      // We need to keep track if the *original* paragraph started with #
+      // If it wraps, subsequent lines lose the # prefix by default in this logic, which is correct for Markdown.
 
       for (let j = 0; j < words.length; j++) {
         const word = words[j];
         if (word === '') continue;
 
         // Measure word width
-        // IMPORTANT: Preview.tsx renders each character in its own <span> with display: inline-block.
-        // This removes kerning and changes layout behavior.
-        // We must measure EACH character individually and sum them to match the Preview exactly.
-
         let wordWidth = 0;
         for (let charIndex = 0; charIndex < word.length; charIndex++) {
           measureDiv.textContent = word[charIndex];
           wordWidth += measureDiv.offsetWidth;
         }
-
-        // Add spacing adjustment: wordSpacing is applied to EACH char in Preview
         wordWidth += (word.length * wordSpacing);
 
         if (currentLineWidth + wordWidth > availableWidth) {
           if (currentLineWidth > 0) {
-            // If we have content on this line, wrap to next line first
-            currentPageLines++;
-            if (currentPageLines >= maxLinesPerPage) {
-              newPages.push(currentPageContent);
-              currentPageContent = '';
-              currentPageLines = 0;
-            }
-            currentPageContent += '\n'; // visual wrap
+            // Wrap to next line
+            addLineToPage(currentLineBuffer);
+            currentLineBuffer = '';
             currentLineWidth = 0;
-            // Fall through to process the word on the new line
           }
 
-          // Now we are at the start of a line (currentLineWidth is 0 or we just wrapped).
-          // Check if the word ITSELF is too big to fit on a single line.
+          // Check if word itself causes overflow
           if (wordWidth > availableWidth) {
-            // We need to split this word character by char
+            // Split word char by char
             let currentSubWord = '';
             let currentSubWidth = 0;
 
@@ -149,18 +175,7 @@ export default function ConverterSection() {
               const charWidth = measureDiv.offsetWidth + wordSpacing;
 
               if (currentSubWidth + charWidth > availableWidth) {
-                // This char would overflow, push currentSubWord and wrap
-                currentPageContent += currentSubWord;
-                // Add hard break for the split
-                currentPageContent += '\n';
-                currentPageLines++;
-
-                if (currentPageLines >= maxLinesPerPage) {
-                  newPages.push(currentPageContent);
-                  currentPageContent = '';
-                  currentPageLines = 0;
-                }
-
+                addLineToPage(currentSubWord);
                 currentSubWord = char;
                 currentSubWidth = charWidth;
               } else {
@@ -168,33 +183,23 @@ export default function ConverterSection() {
                 currentSubWidth += charWidth;
               }
             }
-            // Add the remainder
-            currentPageContent += currentSubWord;
+            currentLineBuffer = currentSubWord;
             currentLineWidth = currentSubWidth;
-
           } else {
-            // Word fits on a fresh line
-            currentPageContent += word;
+            // Word fits on new line
+            currentLineBuffer = word;
             currentLineWidth = wordWidth;
           }
         } else {
-          // Word fits on current line
-          currentPageContent += word;
+          // Fits on current line
+          currentLineBuffer += word;
           currentLineWidth += wordWidth;
         }
-
-
       }
 
-      if (i < paragraphs.length - 1) {
-        currentPageContent += '\n';
-        currentPageLines++;
-        currentLineWidth = 0;
-        if (currentPageLines >= maxLinesPerPage) {
-          newPages.push(currentPageContent);
-          currentPageContent = '';
-          currentPageLines = 0;
-        }
+      // Flush remainder of paragraph
+      if (currentLineBuffer.length > 0 || currentLineWidth > 0) { // Check length or width to be safe
+        addLineToPage(currentLineBuffer);
       }
     }
 
@@ -277,6 +282,8 @@ export default function ConverterSection() {
               setPaper={setPaper}
               inkColor={inkColor}
               setInkColor={setInkColor}
+              headingColor={headingColor}
+              setHeadingColor={setHeadingColor}
               slant={slant}
               setSlant={setSlant}
               rotate={rotate}
@@ -307,6 +314,7 @@ export default function ConverterSection() {
                 font={font}
                 paper={paper}
                 inkColor={inkColor}
+                headingColor={headingColor}
                 slant={slant}
                 rotate={rotate}
                 wobble={wobble}
@@ -345,6 +353,7 @@ export default function ConverterSection() {
                 font={font}
                 paper={paper}
                 inkColor={inkColor}
+                headingColor={headingColor}
                 slant={slant}
                 rotate={rotate}
                 wobble={wobble}

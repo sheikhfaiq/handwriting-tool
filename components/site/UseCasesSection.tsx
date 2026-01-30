@@ -14,7 +14,7 @@ const UseCasesSection = () => {
             icon: <BookOpen className="w-6 h-6" />,
 
             title: "School Notes",
-            description: "Students can make neat handwritten notes and assignments quickly without writing by hand. Perfect for submitting authentic-looking work."
+            description: "Students can make neat handwritten assignment, notes and essay handwriting quickly without writing by hand. Perfect for submitting authentic-looking work."
         },
         {
             icon: <Heart className="w-6 h-6" />,
@@ -32,7 +32,7 @@ const UseCasesSection = () => {
             icon: <Pencil className="w-6 h-6" />,
 
             title: "Teachers and Educators",
-            description: "Teachers use it to create worksheets, handwritten examples, and feedback that feels more personal and engaging to students."
+            description: "Teachers use it to create worksheets,assignment handwriting and handwritten ai examples, and feedback that feels more personal and engaging to students."
         }
     ];
 
@@ -43,7 +43,7 @@ const UseCasesSection = () => {
                     {/* Left Column: Heading */}
                     <div className="lg:w-3/5 lg:sticky lg:top-24">
                         <h2 className="text-3xl md:text-5xl lg:text-5xl font-bold text-[#1a237e] leading-tight mb-12">
-                            Use Cases of Text to Handwriting Converter
+                            Use Cases of handwriting text generator
                         </h2>
 
                         {/* Illustrative SVG */}

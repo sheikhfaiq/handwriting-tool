@@ -18,7 +18,7 @@ const WhyChooseUs = () => {
         {
             icon: <PenTool className="w-8 h-8 text-white" />,
             title: "Multiple Handwriting Styles",
-            description: "Choose from a variety of beautiful, authentic handwriting fonts that perfectly match your personality.",
+            description: "Choose from a variety of beautiful, authentic hand writing text fonts that perfectly match your personality.",
             color: "bg-[#1e3a8a]"
         },
         {
@@ -36,13 +36,13 @@ const WhyChooseUs = () => {
         {
             icon: <Eye className="w-8 h-8 text-white" />,
             title: "Instant Preview",
-            description: "See your handwriting transform in real-time as you type.",
+            description: "See your handwriting online transform in real-time as you type.",
             color: "bg-purple-500"
         },
         {
             icon: <Download className="w-8 h-8 text-white" />,
             title: "Easy Download",
-            description: "Export your handwriting as high-quality PNG images or PDF with one click.",
+            description: "Export your text to hand writing as high-quality PNG images or PDF with one click.",
             color: "bg-orange-500"
         },
         {
@@ -60,7 +60,7 @@ const WhyChooseUs = () => {
         {
             icon: <Clipboard className="w-8 h-8 text-white" />,
             title: "Easy Copy and Paste",
-            description: "Paste text directly into the input box to fast and conveniently convert long content.",
+            description: "Paste text directly into the input box to fast and convert text in handwriting conveniently.",
             color: "bg-green-500"
         },
         {
