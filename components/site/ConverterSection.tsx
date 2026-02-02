@@ -51,6 +51,7 @@ export default function ConverterSection() {
     if (paper === 'ruled') {
       horizontalMarginLeft = 72; // 4.5rem = ~72px
       verticalMarginTop = 8; // 0.5rem
+      verticalMarginBottom = 8; // Reduce bottom margin to match top and maximize space
     } else if (paper === 'notebook-margin') {
       horizontalMarginLeft = 64; // 4rem
       verticalMarginTop = 8; // 0.5rem
@@ -77,7 +78,8 @@ export default function ConverterSection() {
     // Calculate lines per page using Pixel Height
     const baseLineHeightPx = fontSize * lineHeight;
     // Subtract a safety buffer (e.g. 40px) to ensure we don't write to the very edge and risk clipping
-    const safetyBuffer = 40;
+    // Subtract a safety buffer (reduced to 3px to absolute maximum page usage) to ensure we don't write to the very edge
+    const safetyBuffer = 3;
     const availableHeight = PAGE_HEIGHT - (verticalMarginTop + verticalMarginBottom + safetyBuffer);
 
     const newPages: string[] = [];
@@ -87,7 +89,8 @@ export default function ConverterSection() {
     // Helper to add a visual line to the current page
     const addLineToPage = (lineContent: string) => {
       // Determine height of this specific line
-      const headingMatch = lineContent.match(/^(#{1,6})\s/);
+      // Update regex to support optional color syntax: ##[color:#ff0000] Title
+      const headingMatch = lineContent.match(/^(#{1,6})(?:\[color:(.*?)\])?\s/);
       const headingLevel = headingMatch ? headingMatch[1].length : 0;
 
       let scale = 1;
@@ -98,7 +101,9 @@ export default function ConverterSection() {
         scale = headingScales[headingLevel] || 1;
       }
 
-      const thisLineHeight = baseLineHeightPx * scale;
+      // Snap to grid: Align with ruled lines by rounding up to nearest integer multiple
+      // This matches Preview.tsx logic to ensure pagination is accurate
+      const thisLineHeight = Math.ceil(scale) * baseLineHeightPx;
 
       // Check if this line fits
       if (currentHeightUsed + thisLineHeight > availableHeight) {

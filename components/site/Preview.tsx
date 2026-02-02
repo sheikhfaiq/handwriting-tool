@@ -64,10 +64,25 @@ export default function Preview({
     const text = pages[currentPage] || '';
     const lines = text.split('\n');
     return lines.map((line, lineIndex) => {
-      // Check for Heading levels (H1-H6)
-      const headingMatch = line.match(/^(#{1,6})\s/);
-      const headingLevel = headingMatch ? headingMatch[1].length : 0;
-      const cleanLine = headingLevel > 0 ? line.substring(headingLevel + 1) : line;
+      // Check for headings with optional individual color syntax: ##[color:#ff0000] Title
+      const headingMatch = line.match(/^(#{1,6})(?:\[color:(.*?)\])?\s+(.*)$/);
+      let headingLevel = 0;
+      let customHeadingColor = null;
+      // 'cleanLine' should represent the content without the markdown heading syntax
+      let cleanLine = line;
+
+      if (headingMatch) {
+        headingLevel = headingMatch[1].length;
+        customHeadingColor = headingMatch[2] || null; // Capture color if present
+        cleanLine = headingMatch[3]; // The content after hash and color
+      } else {
+        // Fallback for standard headings (though regex above covers most, strict standard check)
+        const simpleHeadingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (simpleHeadingMatch) {
+          headingLevel = simpleHeadingMatch[1].length;
+          cleanLine = simpleHeadingMatch[2];
+        }
+      }
 
       // Font sizes and scales for H1-H6
       const headingScales: Record<number, number> = {
@@ -90,7 +105,8 @@ export default function Preview({
 
       // Calculate dynamic row height
       const scale = headingLevel > 0 ? headingScales[headingLevel] : 1;
-      const dynamicRowHeight = fontSize * lineHeight * scale;
+      // Snap to nearest integer multiple of base line height to keep alignment with paper grid
+      const dynamicRowHeight = Math.ceil(scale) * (fontSize * lineHeight);
 
       const parts = [];
       let remaining = cleanLine;
@@ -153,7 +169,7 @@ export default function Preview({
                 fontStyle: isItalic ? 'italic' : 'normal',
                 textDecoration: isUnderline ? 'underline' : 'none',
                 fontSize: headingLevel > 0 ? headingFontSizes[headingLevel] : '1em',
-                color: headingLevel > 0 ? headingColor : 'inherit', // Apply heading color
+                color: headingLevel > 0 ? (customHeadingColor || headingColor) : 'inherit', // Apply specific or global heading color
                 marginRight: `${wordSpacing}px`,
                 // Ensure text aligns to the bottom of the larger row height if needed, 
                 // but usually inline-block scales with font-size. 
@@ -172,7 +188,9 @@ export default function Preview({
           position: 'relative',
           whiteSpace: 'nowrap',
           display: 'flex',
-          alignItems: 'baseline' // Align text to baseline
+          // Center headings vertically within their grid-snapped height
+          // Regular text aligns to baseline to sit on the ruled line
+          alignItems: headingLevel > 0 ? 'center' : 'baseline'
         }}>
           {renderedLine}
         </div>

@@ -116,7 +116,7 @@ export default function Controls({
   setExtraFields,
 }: ControlsProps) {
 
-  const insertFormat = (prefix: string, suffix: string) => {
+  const toggleFormat = (prefix: string, suffix: string) => {
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -124,29 +124,33 @@ export default function Controls({
     const end = textarea.selectionEnd;
     const selectedText = text.substring(start, end);
 
-    const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
-    setText(newText);
+    if (selectedText.includes('\n')) {
+      // Multi-line selection: Apply formatting to each line individually
+      const segments = selectedText.split('\n');
 
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-    }, 0);
-  };
+      // Check if we should remove or add. 
+      // If all non-empty segments are wrapped, we remove. Otherwise we add.
+      const areAllWrapped = segments.every(seg =>
+        seg.trim().length === 0 || (seg.startsWith(prefix) && seg.endsWith(suffix))
+      );
 
-  const insertList = (bullet: string) => {
-    const textarea = document.querySelector('textarea');
-    if (!textarea) return;
+      const newSegments = segments.map(seg => {
+        if (seg.trim().length === 0) return seg;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+        if (areAllWrapped) {
+          // Remove formatting: __Text__ -> Text
+          // We check again to be safe
+          if (seg.startsWith(prefix) && seg.endsWith(suffix)) {
+            return seg.slice(prefix.length, -suffix.length);
+          }
+          return seg;
+        } else {
+          // Add formatting: Text -> __Text__
+          return prefix + seg + suffix;
+        }
+      });
 
-    if (start !== end) {
-      // Apply to selected lines
-      const selectedText = text.substring(start, end);
-      const lines = selectedText.split('\n');
-      const newLines = lines.map(line => line.trim().length > 0 ? `${bullet} ${line}` : line);
-      const newSelectedText = newLines.join('\n');
-
+      const newSelectedText = newSegments.join('\n');
       const newText = text.substring(0, start) + newSelectedText + text.substring(end);
       setText(newText);
 
@@ -154,25 +158,81 @@ export default function Controls({
         textarea.focus();
         textarea.setSelectionRange(start, start + newSelectedText.length);
       }, 0);
+
     } else {
-      // Apply to current line
-      const textLines = text.substring(0, start).split('\n');
-      const currentLineIndex = textLines.length - 1;
-      const allLines = text.split('\n');
-      const currentLine = allLines[currentLineIndex];
+      // Single-line selection: Check surrounding context (existing logic)
+      const before = text.substring(start - prefix.length, start);
+      const after = text.substring(end, end + suffix.length);
 
-      allLines[currentLineIndex] = `${bullet} ${currentLine}`;
-
-      const newText = allLines.join('\n');
-      setText(newText);
-
-      setTimeout(() => {
-        textarea.focus();
-        const validLines = allLines.slice(0, currentLineIndex + 1);
-        const newPos = validLines.join('\n').length;
-        textarea.setSelectionRange(newPos, newPos);
-      }, 0);
+      if (before === prefix && after === suffix) {
+        const newText = text.substring(0, start - prefix.length) + selectedText + text.substring(end + suffix.length);
+        setText(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start - prefix.length, end - prefix.length);
+        }, 0);
+      } else {
+        const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+        setText(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+        }, 0);
+      }
     }
+  };
+
+  const toggleList = (bullet: string) => {
+    const textarea = document.querySelector('textarea');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const allLines = text.split('\n');
+    let startLineIndex = 0;
+    let endLineIndex = 0;
+    let currentPos = 0;
+
+    for (let i = 0; i < allLines.length; i++) {
+      const lineLen = allLines[i].length + 1;
+      if (currentPos + lineLen > start && start >= currentPos) startLineIndex = i;
+      if (currentPos + lineLen > end && end >= currentPos) {
+        endLineIndex = i;
+        break;
+      }
+      currentPos += lineLen;
+    }
+
+    const bullets = ['•', '◦', '-', '★', '>'];
+    const bulletRegex = new RegExp(`^\\s*([${bullets.map(b => '\\' + b).join('')}])\\s?`);
+
+    const newLines = [...allLines];
+
+    for (let i = startLineIndex; i <= endLineIndex; i++) {
+      const line = newLines[i];
+      if (line.trim().length === 0) continue;
+
+      const match = line.match(bulletRegex);
+      if (match) {
+        const existingBullet = match[1];
+        if (existingBullet === bullet) {
+          newLines[i] = line.replace(bulletRegex, '').trim();
+        } else {
+          newLines[i] = line.replace(bulletRegex, `${bullet} `);
+        }
+      } else {
+        newLines[i] = `${bullet} ${line}`;
+      }
+    }
+
+    const newText = newLines.join('\n');
+    setText(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start, start + (newText.length - text.length));
+    }, 0);
   };
 
   return (
@@ -208,21 +268,21 @@ export default function Controls({
               {/* Basic Formatting */}
               <div className="flex gap-2">
                 <button
-                  onClick={() => insertFormat('**', '**')}
+                  onClick={() => toggleFormat('**', '**')}
                   className="bg-[#2D3E64] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-[#1e2a4a] transition-colors"
                   title="Bold"
                 >
                   Bold
                 </button>
                 <button
-                  onClick={() => insertFormat('*', '*')}
+                  onClick={() => toggleFormat('*', '*')}
                   className="bg-[#F0F2F5] text-gray-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition-colors italic"
                   title="Italic"
                 >
                   Italic
                 </button>
                 <button
-                  onClick={() => insertFormat('__', '__')}
+                  onClick={() => toggleFormat('__', '__')}
                   className="bg-[#F0F2F5] text-gray-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition-colors underline underline-offset-4"
                   title="Underline"
                 >
@@ -241,55 +301,56 @@ export default function Controls({
 
                       const start = textarea.selectionStart;
                       const end = textarea.selectionEnd;
-                      const prefix = '#'.repeat(level) + ' ';
 
-                      if (start !== end) {
-                        // Case: Text is selected
-                        const selectedText = text.substring(start, end);
-                        const beforeText = text.substring(0, start);
-                        const afterText = text.substring(end);
+                      // We need to operate on full lines to ensure proper Heading syntax
+                      const allLines = text.split('\n');
+                      let startLineIndex = 0;
+                      let endLineIndex = 0;
+                      let currentPos = 0;
 
-                        // Ensure heading starts on a new line and move rest of text down
-                        const needsNewLineBefore = start > 0 && !beforeText.endsWith('\n');
-                        const needsNewLineAfter = !afterText.startsWith('\n');
-
-                        const inserted = (needsNewLineBefore ? '\n' : '') + prefix + selectedText + (needsNewLineAfter ? '\n' : '');
-                        const newContent = beforeText + inserted + afterText;
-
-                        setText(newContent);
-
-                        setTimeout(() => {
-                          textarea.focus();
-                          const newCursorPos = start + inserted.length;
-                          textarea.setSelectionRange(newCursorPos, newCursorPos);
-                        }, 0);
-                      } else {
-                        // Case: No selection, transform current line
-                        const textLines = text.substring(0, start).split('\n');
-                        const currentLineIndex = textLines.length - 1;
-                        const allLines = text.split('\n');
-                        const currentLine = allLines[currentLineIndex];
-
-                        // Remove existing heading markers if any
-                        const cleanLine = currentLine.replace(/^#{1,6}\s/, '');
-                        const newLineContent = prefix + cleanLine;
-
-                        allLines[currentLineIndex] = newLineContent;
-
-                        // Ensure there's a next line for content
-                        if (currentLineIndex === allLines.length - 1) {
-                          allLines.push('');
+                      // Find start and end line indices
+                      for (let i = 0; i < allLines.length; i++) {
+                        const lineLen = allLines[i].length + 1; // +1 for newline
+                        if (currentPos + lineLen > start && start >= currentPos) startLineIndex = i;
+                        if (currentPos + lineLen > end && end >= currentPos) {
+                          endLineIndex = i;
+                          break;
                         }
-
-                        const updatedText = allLines.join('\n');
-                        setText(updatedText);
-
-                        setTimeout(() => {
-                          textarea.focus();
-                          const pos = allLines.slice(0, currentLineIndex + 1).join('\n').length + 1;
-                          textarea.setSelectionRange(pos, pos);
-                        }, 0);
+                        currentPos += lineLen;
                       }
+
+                      const headingRegex = /^(#{1,6})\s/;
+                      const targetPrefix = '#'.repeat(level) + ' ';
+
+                      const newLines = [...allLines];
+
+                      for (let i = startLineIndex; i <= endLineIndex; i++) {
+                        const line = newLines[i];
+                        const match = line.match(headingRegex);
+
+                        if (match) {
+                          const currentLevel = match[1].length;
+                          if (currentLevel === level) {
+                            // Same level -> Remove (Toggle Off)
+                            newLines[i] = line.replace(headingRegex, '');
+                          } else {
+                            // Different level -> Replace
+                            newLines[i] = line.replace(headingRegex, targetPrefix);
+                          }
+                        } else {
+                          // No heading -> Add
+                          newLines[i] = targetPrefix + line;
+                        }
+                      }
+
+                      const newText = newLines.join('\n');
+                      setText(newText);
+
+                      setTimeout(() => {
+                        textarea.focus();
+                        // Restore selection loosely (keeping it simple as exact pos tracking is complex with replacements)
+                        textarea.setSelectionRange(start, start + (newText.length - text.length));
+                      }, 0);
                     }}
                     className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                     title={`Heading ${level}`}
@@ -297,40 +358,99 @@ export default function Controls({
                     H{level}
                   </button>
                 ))}
+
+                {/* Specific Heading Color Picker */}
+                <div className="flex items-center ml-2 border-l border-gray-200 pl-3 gap-2" title="Selected Heading Color">
+                  <div className="relative group">
+                    <div className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden cursor-pointer shadow-sm hover:scale-110 transition-transform">
+                      <input
+                        type="color"
+                        className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer opacity-0"
+                        onChange={(e) => {
+                          const color = e.target.value;
+                          const textarea = document.querySelector('textarea');
+                          if (!textarea) return;
+
+                          const start = textarea.selectionStart;
+                          const allLines = text.split('\n');
+                          let currentPos = 0;
+                          let lineIndex = -1;
+
+                          // Find current line index
+                          for (let i = 0; i < allLines.length; i++) {
+                            const lineLen = allLines[i].length + 1;
+                            if (currentPos + lineLen > start) {
+                              lineIndex = i;
+                              break;
+                            }
+                            currentPos += lineLen;
+                          }
+
+                          if (lineIndex !== -1) {
+                            // Check if line is a heading
+                            const line = allLines[lineIndex];
+                            const headingRegex = /^(#{1,6})(?:\[color:.*?\])?\s+(.*)$/;
+                            const match = line.match(headingRegex);
+
+                            if (match) {
+                              // It's a heading, inject color
+                              const levelHashes = match[1];
+                              const content = match[2];
+                              // Reconstruct with new color
+                              allLines[lineIndex] = `${levelHashes}[color:${color}] ${content}`;
+
+                              const newText = allLines.join('\n');
+                              setText(newText);
+
+                              setTimeout(() => {
+                                textarea.focus();
+                                textarea.setSelectionRange(start, start); // Restore cursor
+                              }, 0);
+                            }
+                          }
+                        }}
+                      />
+                      <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-80 group-hover:opacity-100" />
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-medium absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                      Tint
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Lists */}
               <div className="flex gap-2 border-l border-gray-200 pl-3">
                 <button
-                  onClick={() => insertList('•')}
+                  onClick={() => toggleList('•')}
                   className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                   title="Bullet List"
                 >
                   <List size={16} />
                 </button>
                 <button
-                  onClick={() => insertList('◦')}
+                  onClick={() => toggleList('◦')}
                   className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                   title="Hollow Bullet"
                 >
                   ◦
                 </button>
                 <button
-                  onClick={() => insertList('-')}
+                  onClick={() => toggleList('-')}
                   className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                   title="Dash List"
                 >
                   -
                 </button>
                 <button
-                  onClick={() => insertList('★')}
+                  onClick={() => toggleList('★')}
                   className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                   title="Star List"
                 >
                   ★
                 </button>
                 <button
-                  onClick={() => insertList('>')}
+                  onClick={() => toggleList('>')}
                   className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
                   title="Arrow List"
                 >
