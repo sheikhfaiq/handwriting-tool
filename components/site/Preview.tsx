@@ -1,5 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { FileText, Image } from 'lucide-react';
+import { Element } from './ConverterSection';
+import CanvasElement from './CanvasElement';
+import ElementFormatToolbar from './ElementFormatToolbar';
 
 interface PreviewProps {
   pages: string[];
@@ -7,7 +10,6 @@ interface PreviewProps {
   font: string;
   paper: string;
   inkColor: string;
-  headingColor: string;
   slant: number;
   rotate: number;
   wobble: number;
@@ -16,17 +18,75 @@ interface PreviewProps {
   wordSpacing: number;
   pageTitle: string;
   pageDate: string;
+  headingColor: string;
   titlePos: { x: number; y: number };
   setTitlePos: (pos: { x: number; y: number }) => void;
   datePos: { x: number; y: number };
   setDatePos: (pos: { x: number; y: number }) => void;
-  extraFields: { id: string; text: string; x: number; y: number }[];
-  setExtraFields: (fields: { id: string; text: string; x: number; y: number }[]) => void;
+  addElement: (type: 'text' | 'heading') => void;
+  elements: Element[];
+  selectedElementId: string | null;
+  onSelectElement: (id: string | null) => void;
+  onUpdateElement: (id: string, updates: Partial<Element>) => void;
+  onDeleteElement: (id: string) => void;
   previewRef?: React.RefObject<HTMLDivElement | null> | null;
   onDownloadImage?: () => void;
   onDownloadPDF?: () => void;
   isGenerating?: boolean;
 }
+
+type StyleType = 'bold' | 'italic' | 'underline';
+
+interface StyledPart {
+  content: string;
+  styles: Set<StyleType>;
+}
+
+const parseMarkdown = (raw: string, currentStyles: Set<StyleType>): StyledPart[] => {
+  const formats = [
+    { marker: '**', type: 'bold' as StyleType },
+    { marker: '*', type: 'italic' as StyleType },
+    { marker: '__', type: 'underline' as StyleType }
+  ];
+
+  let bestIdx = Infinity;
+  let bestType: StyleType | null = null;
+  let matchLen = 0;
+
+  formats.forEach(f => {
+    const idx = raw.indexOf(f.marker);
+    if (idx !== -1 && idx < bestIdx) {
+      bestIdx = idx;
+      bestType = f.type;
+      matchLen = f.marker.length;
+    }
+  });
+
+  if (bestIdx === Infinity) {
+    return [{ content: raw, styles: new Set(currentStyles) }];
+  }
+
+  const results: StyledPart[] = [];
+  const pre = raw.substring(0, bestIdx);
+  if (pre) results.push({ content: pre, styles: new Set(currentStyles) });
+
+  const remainder = raw.substring(bestIdx);
+  const marker = formats.find(f => f.type === bestType)!.marker;
+  const closeIdx = remainder.indexOf(marker, matchLen);
+
+  if (closeIdx !== -1) {
+    const inner = remainder.substring(matchLen, closeIdx);
+    const nextStyles = new Set(currentStyles);
+    nextStyles.add(bestType!);
+    results.push(...parseMarkdown(inner, nextStyles));
+    results.push(...parseMarkdown(remainder.substring(closeIdx + matchLen), new Set(currentStyles)));
+  } else {
+    results.push({ content: remainder.substring(0, matchLen), styles: new Set(currentStyles) });
+    results.push(...parseMarkdown(remainder.substring(matchLen), new Set(currentStyles)));
+  }
+
+  return results;
+};
 
 export default function Preview({
   pages,
@@ -34,7 +94,6 @@ export default function Preview({
   font,
   paper,
   inkColor,
-  headingColor,
   slant,
   rotate,
   wobble,
@@ -43,12 +102,17 @@ export default function Preview({
   wordSpacing,
   pageTitle,
   pageDate,
+  headingColor,
   titlePos,
   setTitlePos,
   datePos,
   setDatePos,
-  extraFields,
-  setExtraFields,
+  addElement,
+  elements,
+  selectedElementId,
+  onSelectElement,
+  onUpdateElement,
+  onDeleteElement,
   previewRef,
   onDownloadImage,
   onDownloadPDF,
@@ -61,119 +125,48 @@ export default function Preview({
   }, []);
 
   const renderedText = useMemo(() => {
-    const text = pages[currentPage] || '';
-    const lines = text.split('\n');
-    return lines.map((line, lineIndex) => {
-      // Check for headings with optional individual color syntax: ##[color:#ff0000] Title
-      const headingMatch = line.match(/^(#{1,6})(?:\[color:(.*?)\])?\s+(.*)$/);
-      let headingLevel = 0;
-      let customHeadingColor = null;
-      // 'cleanLine' should represent the content without the markdown heading syntax
-      let cleanLine = line;
+    const rawText = pages[currentPage] || '';
+    if (!rawText) return [];
 
-      if (headingMatch) {
-        headingLevel = headingMatch[1].length;
-        customHeadingColor = headingMatch[2] || null; // Capture color if present
-        cleanLine = headingMatch[3]; // The content after hash and color
-      } else {
-        // Fallback for standard headings (though regex above covers most, strict standard check)
-        const simpleHeadingMatch = line.match(/^(#{1,6})\s+(.*)$/);
-        if (simpleHeadingMatch) {
-          headingLevel = simpleHeadingMatch[1].length;
-          cleanLine = simpleHeadingMatch[2];
-        }
-      }
+    const lines = rawText.split('\n').map(line => {
+      return parseMarkdown(line, new Set());
+    });
 
-      // Font sizes and scales for H1-H6
-      const headingScales: Record<number, number> = {
-        1: 2,
-        2: 1.75,
-        3: 1.5,
-        4: 1.3,
-        5: 1.2,
-        6: 1.1,
-      };
+    return lines.map((lineParts, lineIdx) => {
+      const rowHeight = fontSize * lineHeight;
+      let charIdxInLine = 0;
 
-      const headingFontSizes: Record<number, string> = {
-        1: '2em',
-        2: '1.75em',
-        3: '1.5em',
-        4: '1.3em',
-        5: '1.2em',
-        6: '1.1em',
-      };
+      const lineContent = lineParts.map(p => p.content).join('');
+      const combinedMatch = lineContent.match(/^([•◦★>\-] )?(#{1,6})\s/);
+      const headingLevel = combinedMatch ? combinedMatch[2].length : 0;
 
-      // Calculate dynamic row height
-      const scale = headingLevel > 0 ? headingScales[headingLevel] : 1;
-      // Snap to nearest integer multiple of base line height to keep alignment with paper grid
-      const dynamicRowHeight = Math.ceil(scale) * (fontSize * lineHeight);
+      const fontSizeMultiplier = headingLevel > 0 ? (1.8 - (headingLevel - 1) * 0.1) : 1;
 
-      const parts = [];
-      let remaining = cleanLine;
-
-      while (remaining.length > 0) {
-        const boldMatch = remaining.match(/\*\*(.*?)\*\*/);
-        const italicMatch = remaining.match(/\*(.*?)\*/);
-        const underlineMatch = remaining.match(/__(.*?)__/);
-
-        let bestMatch = null;
-        let type = '';
-        let index = Infinity;
-
-        if (boldMatch && boldMatch.index !== undefined && boldMatch.index < index) {
-          index = boldMatch.index;
-          bestMatch = boldMatch;
-          type = 'bold';
-        }
-        if (italicMatch && italicMatch.index !== undefined && italicMatch.index < index) {
-          index = italicMatch.index;
-          bestMatch = italicMatch;
-          type = 'italic';
-        }
-        if (underlineMatch && underlineMatch.index !== undefined && underlineMatch.index < index) {
-          index = underlineMatch.index;
-          bestMatch = underlineMatch;
-          type = 'underline';
+      const renderedLine = lineParts.map((part, partIdx) => {
+        let content = part.content;
+        if (partIdx === 0 && headingLevel > 0) {
+          content = content.replace(/(#{1,6})\s/, '');
         }
 
-        if (bestMatch && bestMatch.index !== undefined) {
-          if (bestMatch.index > 0) {
-            parts.push({ content: remaining.substring(0, bestMatch.index), type: 'normal' });
-          }
-          parts.push({ content: bestMatch[1], type: type });
-          remaining = remaining.substring(bestMatch.index + bestMatch[0].length);
-        } else {
-          parts.push({ content: remaining, type: 'normal' });
-          remaining = '';
-        }
-      }
-
-      const renderedLine = parts.map((part, partIndex) => {
-        const { content, type } = part;
-        let isBold = type === 'bold';
-        let isItalic = type === 'italic';
-        let isUnderline = type === 'underline';
-
-        return content.split('').map((char, charIndex) => {
-          const randomRotate = isMounted ? (Math.random() - 0.5) * rotate : 0;
-          const randomY = isMounted ? (Math.random() - 0.5) * wobble : 0;
+        return content.split('').map((char, cIdx) => {
+          const rotation = isMounted ? (Math.random() - 0.5) * rotate : 0;
+          const offset = isMounted ? (Math.random() - 0.5) * wobble : 0;
+          const charKey = `${lineIdx}-${partIdx}-${cIdx}`;
 
           return (
             <span
-              key={`${lineIndex}-${partIndex}-${charIndex}`}
+              key={charKey}
               style={{
                 display: 'inline-block',
-                transform: `rotate(${randomRotate}deg) translateY(${randomY}px) skewX(${slant}deg)`,
-                whiteSpace: 'pre',
-                fontWeight: headingLevel > 0 || isBold ? 'bold' : 'normal',
-                fontStyle: isItalic ? 'italic' : 'normal',
-                textDecoration: isUnderline ? 'underline' : 'none',
-                fontSize: headingLevel > 0 ? headingFontSizes[headingLevel] : '1em',
-                color: headingLevel > 0 ? (customHeadingColor || headingColor) : 'inherit', // Apply specific or global heading color
+                transform: `rotate(${rotation}deg) translateY(${offset}px) skewX(${slant}deg)`,
+                color: headingLevel > 0 ? headingColor : 'inherit',
+                fontSize: `${fontSizeMultiplier}em`,
                 marginRight: `${wordSpacing}px`,
-                // Ensure text aligns to the bottom of the larger row height if needed, 
-                // but usually inline-block scales with font-size. 
-                // Vertical align might be needed if mixed content, but here line is uniform.
+                whiteSpace: 'pre',
+                transition: 'all 0.2s ease',
+                fontWeight: (part.styles.has('bold') || headingLevel > 0) ? 'bold' : 'normal',
+                fontStyle: part.styles.has('italic') ? 'italic' : 'normal',
+                textDecoration: part.styles.has('underline') ? 'underline' : 'none',
               }}
             >
               {char}
@@ -183,20 +176,21 @@ export default function Preview({
       });
 
       return (
-        <div key={lineIndex} style={{
-          height: `${dynamicRowHeight}px`,
-          position: 'relative',
-          whiteSpace: 'nowrap',
-          display: 'flex',
-          // Center headings vertically within their grid-snapped height
-          // Regular text aligns to baseline to sit on the ruled line
-          alignItems: headingLevel > 0 ? 'center' : 'baseline'
-        }}>
+        <div
+          key={lineIdx}
+          style={{
+            height: `${headingLevel > 0 ? rowHeight * 2 : rowHeight}px`,
+            display: 'flex',
+            alignItems: headingLevel > 0 ? 'center' : 'baseline',
+            position: 'relative',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {renderedLine}
         </div>
       );
     });
-  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing, fontSize, lineHeight, headingColor, inkColor]);
+  }, [pages, currentPage, rotate, wobble, slant, isMounted, wordSpacing, fontSize, lineHeight, headingColor]);
 
   const getPaperStyle = () => {
     const baseStyle = {
@@ -209,10 +203,6 @@ export default function Preview({
     const bottomLineGradient = (color: string) =>
       `linear-gradient(transparent calc(100% - 1px), ${color} calc(100% - 1px))`;
 
-    // Offset to align baseline with the bottom line. 
-    // Handwritings usually float above the bottom of the line-height box.
-    // Each font needs a slightly different offset to sit perfectly on the line.
-    // Normalized to ~0.64em, plus user adjustable offset.
     const fontBaselineOffsets: Record<string, string> = {
       'var(--font-indie-flower)': '0.64em',
       'var(--font-caveat)': '0.55em',
@@ -224,7 +214,7 @@ export default function Preview({
       'var(--font-kalam)': '0.64em',
       'var(--font-patrick)': '0.62em',
       'var(--font-architects)': '0.64em',
-      'var(--font-cedarville)': '0.75em', // Needs more
+      'var(--font-cedarville)': '0.75em',
       'var(--font-homemade)': '0.75em',
       'var(--font-schoolbell)': '0.64em',
       'var(--font-satisfy)': '0.64em',
@@ -232,12 +222,11 @@ export default function Preview({
       'var(--font-swanky-moo)': '0.68em',
     };
 
-    // Base offset from map or default
     const yOffset = fontBaselineOffsets[font] || '0.64em';
 
     switch (paper) {
       case 'ruled': {
-        const paddingTop = '0.5rem'; // 8px
+        const paddingTop = '0.5rem';
         const paddingLeft = '4.5rem';
         return {
           ...baseStyle,
@@ -260,7 +249,6 @@ export default function Preview({
         return {
           ...baseStyle,
           backgroundColor: '#fff',
-          // Grid lines usually at top/left. We shift up so bottom of cell aligns with baseline
           backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
           backgroundSize: '20px 20px',
           backgroundPosition: `${padding} calc(${padding} - ${yOffset})`,
@@ -391,8 +379,7 @@ export default function Preview({
       <div className="bg-[#3B527E] p-6 text-white flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">Preview</h2>
-          <p className="text-white/70 text-sm">See your handwriting typing
-          </p>
+          <p className="text-white/70 text-sm">See your handwriting typing</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -558,125 +545,31 @@ export default function Preview({
             </div>
           )}
 
-          {/* Page Header - Draggable Title */}
-          {pageTitle && (
-            <div
-              className="absolute z-20 cursor-move font-bold text-xl"
-              style={{
-                left: titlePos.x,
-                top: titlePos.y,
-                fontFamily: font,
-                color: inkColor,
-              }}
-              onMouseDown={(e) => {
-                const startX = e.clientX - titlePos.x;
-                const startY = e.clientY - titlePos.y;
-
-                const handleMouseMove = (moveEvent: MouseEvent) => {
-                  const newX = moveEvent.clientX - startX;
-                  const newY = moveEvent.clientY - startY;
-                  setTitlePos({ x: newX, y: newY });
-                };
-
-                const handleMouseUp = () => {
-                  document.removeEventListener('mousemove', handleMouseMove);
-                  document.removeEventListener('mouseup', handleMouseUp);
-                };
-
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-              }}
-            >
-              {pageTitle}
-            </div>
-          )}
-
-          {/* Page Header - Draggable Date */}
-          {pageDate && (
-            <div
-              className="absolute z-20 cursor-move text-lg"
-              style={{
-                left: datePos.x,
-                top: datePos.y,
-                fontFamily: font,
-                color: inkColor,
-              }}
-              onMouseDown={(e) => {
-                const startX = e.clientX - datePos.x;
-                const startY = e.clientY - datePos.y;
-
-                const handleMouseMove = (moveEvent: MouseEvent) => {
-                  const newX = moveEvent.clientX - startX;
-                  const newY = moveEvent.clientY - startY;
-                  setDatePos({ x: newX, y: newY });
-                };
-
-                const handleMouseUp = () => {
-                  document.removeEventListener('mousemove', handleMouseMove);
-                  document.removeEventListener('mouseup', handleMouseUp);
-                };
-
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-              }}
-            >
-              {pageDate}
-            </div>
-          )}
-
           <div className="whitespace-pre-wrap wrap-break-word relative z-10">
             {renderedText}
           </div>
 
-          {/* Extra Editable Fields */}
-          {extraFields.map((field) => (
-            <div
-              key={field.id}
-              className="absolute z-20 cursor-move"
-              style={{
-                left: field.x,
-                top: field.y,
-                fontFamily: font,
-                color: inkColor,
-                fontSize: `${fontSize}px`,
-              }}
-              onMouseDown={(e) => {
-                const startX = e.clientX - field.x;
-                const startY = e.clientY - field.y;
-
-                const handleMouseMove = (moveEvent: MouseEvent) => {
-                  const newX = moveEvent.clientX - startX;
-                  const newY = moveEvent.clientY - startY;
-                  setExtraFields(extraFields.map(f => f.id === field.id ? { ...f, x: newX, y: newY } : f));
-                };
-
-                const handleMouseUp = () => {
-                  document.removeEventListener('mousemove', handleMouseMove);
-                  document.removeEventListener('mouseup', handleMouseUp);
-                };
-
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-              }}
-            >
-              <input
-                type="text"
-                value={field.text}
-                onChange={(e) => setExtraFields(extraFields.map(f => f.id === field.id ? { ...f, text: e.target.value } : f))}
-                className="bg-transparent border-none focus:outline-dashed focus:outline-1 focus:outline-gray-400"
-                style={{ fontFamily: font, color: inkColor, fontSize: 'inherit' }}
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExtraFields(extraFields.filter(f => f.id !== field.id));
-                }}
-                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 hover:opacity-100 transition-opacity"
-              >
-                ×
-              </button>
-            </div>
+          {/* Canvas Elements */}
+          {elements.map((element) => (
+            <CanvasElement
+              key={element.id}
+              element={element}
+              isSelected={selectedElementId === element.id}
+              onSelect={onSelectElement}
+              onUpdate={onUpdateElement}
+              onDelete={onDeleteElement}
+              font={font}
+            />
           ))}
+
+          {selectedElementId && elements.find(el => el.id === selectedElementId) && (
+            <ElementFormatToolbar
+              element={elements.find(el => el.id === selectedElementId)!}
+              onUpdate={onUpdateElement}
+              onDelete={onDeleteElement}
+              onClose={() => onSelectElement(null)}
+            />
+          )}
         </div>
       </div>
     </div>

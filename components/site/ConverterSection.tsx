@@ -7,6 +7,30 @@ import Pagination from './Pagination';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
+export interface ElementStyle {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  fontSize?: number;
+  lineHeight?: number;
+  color?: string;
+  backgroundColor?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+  isList?: boolean;
+  isOrderedList?: boolean;
+}
+
+export interface Element {
+  id: string;
+  type: 'text' | 'heading';
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: ElementStyle;
+}
+
 export default function ConverterSection() {
   const [text, setText] = useState('');
   const [font, setFont] = useState('var(--font-indie-flower)');
@@ -23,13 +47,13 @@ export default function ConverterSection() {
   const [pageDate, setPageDate] = useState('');
   const [titlePos, setTitlePos] = useState({ x: 50, y: 50 });
   const [datePos, setDatePos] = useState({ x: 50, y: 100 });
-  const [extraFields, setExtraFields] = useState<{ id: string; text: string; x: number; y: number }[]>([]);
+  const [elements, setElements] = useState<Element[]>([]);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<string[]>(['']);
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Pagination Logic
   // Pagination Logic
   useEffect(() => {
     if (!text) {
@@ -88,18 +112,7 @@ export default function ConverterSection() {
 
     // Helper to add a visual line to the current page
     const addLineToPage = (lineContent: string) => {
-      // Determine height of this specific line
-      // Update regex to support optional color syntax: ##[color:#ff0000] Title
-      const headingMatch = lineContent.match(/^(#{1,6})(?:\[color:(.*?)\])?\s/);
-      const headingLevel = headingMatch ? headingMatch[1].length : 0;
-
       let scale = 1;
-      if (headingLevel > 0) {
-        const headingScales: Record<number, number> = {
-          1: 2, 2: 1.75, 3: 1.5, 4: 1.3, 5: 1.2, 6: 1.1,
-        };
-        scale = headingScales[headingLevel] || 1;
-      }
 
       // Snap to grid: Align with ruled lines by rounding up to nearest integer multiple
       // This matches Preview.tsx logic to ensure pagination is accurate
@@ -131,6 +144,11 @@ export default function ConverterSection() {
       }
     };
 
+    // Helper to remove markdown for measurement
+    const removeMarkdown = (txt: string) => {
+      return txt; // No longer removing markdown since we've simplified to plain text
+    };
+
     const paragraphs = text.split('\n');
 
     for (let i = 0; i < paragraphs.length; i++) {
@@ -145,20 +163,18 @@ export default function ConverterSection() {
       let currentLineWidth = 0;
       let currentLineBuffer = '';
 
-      // We need to keep track if the *original* paragraph started with #
-      // If it wraps, subsequent lines lose the # prefix by default in this logic, which is correct for Markdown.
-
       for (let j = 0; j < words.length; j++) {
         const word = words[j];
         if (word === '') continue;
 
-        // Measure word width
+        // Measure word width using CLEAN text
+        const cleanWord = removeMarkdown(word);
         let wordWidth = 0;
-        for (let charIndex = 0; charIndex < word.length; charIndex++) {
-          measureDiv.textContent = word[charIndex];
+        for (let charIndex = 0; charIndex < cleanWord.length; charIndex++) {
+          measureDiv.textContent = cleanWord[charIndex];
           wordWidth += measureDiv.offsetWidth;
         }
-        wordWidth += (word.length * wordSpacing);
+        wordWidth += (cleanWord.length * wordSpacing);
 
         if (currentLineWidth + wordWidth > availableWidth) {
           if (currentLineWidth > 0) {
@@ -170,7 +186,6 @@ export default function ConverterSection() {
 
           // Check if word itself causes overflow
           if (wordWidth > availableWidth) {
-            // Split word char by char
             let currentSubWord = '';
             let currentSubWidth = 0;
 
@@ -203,7 +218,7 @@ export default function ConverterSection() {
       }
 
       // Flush remainder of paragraph
-      if (currentLineBuffer.length > 0 || currentLineWidth > 0) { // Check length or width to be safe
+      if (currentLineBuffer.length > 0 || currentLineWidth > 0) {
         addLineToPage(currentLineBuffer);
       }
     }
@@ -222,7 +237,35 @@ export default function ConverterSection() {
     }
   }, [text, fontSize, lineHeight, paper, font, wordSpacing]);
 
+  const addElement = (type: 'text' | 'heading') => {
+    const newElement: Element = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      text: type === 'heading' ? 'Heading...' : 'Enter text here...',
+      x: 100,
+      y: 100,
+      width: type === 'heading' ? 300 : 250,
+      height: type === 'heading' ? 80 : 150,
+      style: {
+        fontSize: type === 'heading' ? 48 : 24,
+        lineHeight: 1.2,
+        color: inkColor,
+        bold: type === 'heading',
+        textAlign: 'left'
+      }
+    };
+    setElements([...elements, newElement]);
+    setSelectedElementId(newElement.id);
+  };
 
+  const updateElement = (id: string, updates: Partial<Element>) => {
+    setElements(elements.map(el => el.id === id ? { ...el, ...updates } : el));
+  };
+
+  const deleteElement = (id: string) => {
+    setElements(elements.filter(el => el.id !== id));
+    if (selectedElementId === id) setSelectedElementId(null);
+  };
 
   const handleDownloadImage = async () => {
     if (!previewRef.current) return;
@@ -287,8 +330,6 @@ export default function ConverterSection() {
               setPaper={setPaper}
               inkColor={inkColor}
               setInkColor={setInkColor}
-              headingColor={headingColor}
-              setHeadingColor={setHeadingColor}
               slant={slant}
               setSlant={setSlant}
               rotate={rotate}
@@ -305,8 +346,9 @@ export default function ConverterSection() {
               setPageTitle={setPageTitle}
               pageDate={pageDate}
               setPageDate={setPageDate}
-              extraFields={extraFields}
-              setExtraFields={setExtraFields}
+              headingColor={headingColor}
+              setHeadingColor={setHeadingColor}
+              addElement={addElement}
             />
           </div>
 
@@ -319,7 +361,6 @@ export default function ConverterSection() {
                 font={font}
                 paper={paper}
                 inkColor={inkColor}
-                headingColor={headingColor}
                 slant={slant}
                 rotate={rotate}
                 wobble={wobble}
@@ -328,12 +369,17 @@ export default function ConverterSection() {
                 wordSpacing={wordSpacing}
                 pageTitle={pageTitle}
                 pageDate={pageDate}
+                headingColor={headingColor}
                 titlePos={titlePos}
                 setTitlePos={setTitlePos}
                 datePos={datePos}
                 setDatePos={setDatePos}
-                extraFields={extraFields}
-                setExtraFields={setExtraFields}
+                addElement={addElement}
+                elements={elements}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+                onUpdateElement={updateElement}
+                onDeleteElement={deleteElement}
                 previewRef={previewRef}
                 onDownloadImage={handleDownloadImage}
                 onDownloadPDF={handleDownloadPDF}
@@ -358,7 +404,6 @@ export default function ConverterSection() {
                 font={font}
                 paper={paper}
                 inkColor={inkColor}
-                headingColor={headingColor}
                 slant={slant}
                 rotate={rotate}
                 wobble={wobble}
@@ -367,12 +412,17 @@ export default function ConverterSection() {
                 wordSpacing={wordSpacing}
                 pageTitle={pageTitle}
                 pageDate={pageDate}
+                headingColor={headingColor}
                 titlePos={titlePos}
                 setTitlePos={() => { }}
                 datePos={datePos}
                 setDatePos={() => { }}
-                extraFields={extraFields}
-                setExtraFields={() => { }} // No-op for export
+                addElement={addElement}
+                elements={elements}
+                selectedElementId={null}
+                onSelectElement={() => { }}
+                onUpdateElement={() => { }}
+                onDeleteElement={() => { }}
                 previewRef={null}
               />
             </div>

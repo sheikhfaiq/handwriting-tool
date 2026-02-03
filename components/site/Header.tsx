@@ -79,7 +79,11 @@ export default function Header() {
             onClick={(e) => {
               if (pathname === "/") {
                 e.preventDefault();
-                document.getElementById("convert")?.scrollIntoView({ behavior: "smooth" });
+                const element = document.getElementById("convert");
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth" });
+                  window.history.pushState(null, "", "/#convert");
+                }
               }
             }}
           >
@@ -119,7 +123,11 @@ export default function Header() {
               setIsMenuOpen(false);
               if (pathname === "/") {
                 e.preventDefault();
-                document.getElementById("convert")?.scrollIntoView({ behavior: "smooth" });
+                const element = document.getElementById("convert");
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth" });
+                  window.history.pushState(null, "", "/#convert");
+                }
               }
             }}
           >

@@ -36,12 +36,16 @@ export default function Hero() {
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-16">
         <Link
-          href="#convert"
+          href="/#convert"
           className="bg-[#1e355e] text-white px-8 py-3.5 rounded-lg font-semibold text-lg hover:bg-[#2a4a80] transition-colors shadow-lg shadow-indigo-500/20 flex items-center space-x-2"
           onClick={(e) => {
             if (pathname === "/") {
               e.preventDefault();
-              document.getElementById("convert")?.scrollIntoView({ behavior: "smooth" });
+              const element = document.getElementById("convert");
+              if (element) {
+                element.scrollIntoView({ behavior: "smooth" });
+                window.history.pushState(null, "", "/#convert");
+              }
             }
           }}
         >

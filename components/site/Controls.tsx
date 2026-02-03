@@ -1,5 +1,6 @@
-import React from 'react';
-import { Type, Menu, Bold, Italic, Underline, ChevronDown, PenLine, List } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Type, Menu, ChevronDown, PenLine, MousePointer2, Bold, Italic, Underline } from 'lucide-react';
+import RichTextEditor from './RichTextEditor';
 
 interface ControlsProps {
   text: string;
@@ -10,8 +11,6 @@ interface ControlsProps {
   setPaper: (paper: string) => void;
   inkColor: string;
   setInkColor: (color: string) => void;
-  headingColor: string;
-  setHeadingColor: (color: string) => void;
   slant: number;
   setSlant: (slant: number) => void;
   rotate: number;
@@ -28,8 +27,9 @@ interface ControlsProps {
   setPageTitle: (title: string) => void;
   pageDate: string;
   setPageDate: (date: string) => void;
-  extraFields: { id: string; text: string; x: number; y: number }[];
-  setExtraFields: (fields: { id: string; text: string; x: number; y: number }[]) => void;
+  headingColor: string;
+  setHeadingColor: (color: string) => void;
+  addElement: (type: 'text' | 'heading') => void;
 }
 
 const fonts = [
@@ -94,8 +94,6 @@ export default function Controls({
   setPaper,
   inkColor,
   setInkColor,
-  headingColor,
-  setHeadingColor,
   slant,
   setSlant,
   rotate,
@@ -112,128 +110,146 @@ export default function Controls({
   setPageTitle,
   pageDate,
   setPageDate,
-  extraFields,
-  setExtraFields,
+  headingColor,
+  setHeadingColor,
+  addElement,
 }: ControlsProps) {
+  const editorRef = useRef<any>(null);
 
-  const toggleFormat = (prefix: string, suffix: string) => {
-    const textarea = document.querySelector('textarea');
+  const toggleFormat = (marker: string) => {
+    const textarea = editorRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    if (start === end) return;
+
     const selectedText = text.substring(start, end);
+    const isWrapped = selectedText.startsWith(marker) && selectedText.endsWith(marker);
 
-    if (selectedText.includes('\n')) {
-      // Multi-line selection: Apply formatting to each line individually
-      const segments = selectedText.split('\n');
+    let newText = '';
+    let finalWrapped = '';
 
-      // Check if we should remove or add. 
-      // If all non-empty segments are wrapped, we remove. Otherwise we add.
-      const areAllWrapped = segments.every(seg =>
-        seg.trim().length === 0 || (seg.startsWith(prefix) && seg.endsWith(suffix))
-      );
-
-      const newSegments = segments.map(seg => {
-        if (seg.trim().length === 0) return seg;
-
-        if (areAllWrapped) {
-          // Remove formatting: __Text__ -> Text
-          // We check again to be safe
-          if (seg.startsWith(prefix) && seg.endsWith(suffix)) {
-            return seg.slice(prefix.length, -suffix.length);
-          }
-          return seg;
-        } else {
-          // Add formatting: Text -> __Text__
-          return prefix + seg + suffix;
-        }
-      });
-
-      const newSelectedText = newSegments.join('\n');
-      const newText = text.substring(0, start) + newSelectedText + text.substring(end);
-      setText(newText);
-
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start, start + newSelectedText.length);
-      }, 0);
-
+    if (isWrapped) {
+      finalWrapped = selectedText.substring(marker.length, selectedText.length - marker.length);
+      newText = text.substring(0, start) + finalWrapped + text.substring(end);
     } else {
-      // Single-line selection: Check surrounding context (existing logic)
-      const before = text.substring(start - prefix.length, start);
-      const after = text.substring(end, end + suffix.length);
-
-      if (before === prefix && after === suffix) {
-        const newText = text.substring(0, start - prefix.length) + selectedText + text.substring(end + suffix.length);
-        setText(newText);
-        setTimeout(() => {
-          textarea.focus();
-          textarea.setSelectionRange(start - prefix.length, end - prefix.length);
-        }, 0);
-      } else {
-        const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
-        setText(newText);
-        setTimeout(() => {
-          textarea.focus();
-          textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-        }, 0);
-      }
-    }
-  };
-
-  const toggleList = (bullet: string) => {
-    const textarea = document.querySelector('textarea');
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    const allLines = text.split('\n');
-    let startLineIndex = 0;
-    let endLineIndex = 0;
-    let currentPos = 0;
-
-    for (let i = 0; i < allLines.length; i++) {
-      const lineLen = allLines[i].length + 1;
-      if (currentPos + lineLen > start && start >= currentPos) startLineIndex = i;
-      if (currentPos + lineLen > end && end >= currentPos) {
-        endLineIndex = i;
-        break;
-      }
-      currentPos += lineLen;
+      finalWrapped = `${marker}${selectedText}${marker}`;
+      newText = text.substring(0, start) + finalWrapped + text.substring(end);
     }
 
-    const bullets = ['•', '◦', '-', '★', '>'];
-    const bulletRegex = new RegExp(`^\\s*([${bullets.map(b => '\\' + b).join('')}])\\s?`);
-
-    const newLines = [...allLines];
-
-    for (let i = startLineIndex; i <= endLineIndex; i++) {
-      const line = newLines[i];
-      if (line.trim().length === 0) continue;
-
-      const match = line.match(bulletRegex);
-      if (match) {
-        const existingBullet = match[1];
-        if (existingBullet === bullet) {
-          newLines[i] = line.replace(bulletRegex, '').trim();
-        } else {
-          newLines[i] = line.replace(bulletRegex, `${bullet} `);
-        }
-      } else {
-        newLines[i] = `${bullet} ${line}`;
-      }
-    }
-
-    const newText = newLines.join('\n');
     setText(newText);
-
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(start, start + (newText.length - text.length));
+      textarea.setSelectionRange(start, start + finalWrapped.length);
     }, 0);
   };
+
+  const toggleBullet = (symbol: string) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Find the full lines covered by the selection
+    const beforeText = text.substring(0, start);
+    const lineStartIdx = beforeText.lastIndexOf('\n') + 1;
+    const affectedText = text.substring(lineStartIdx, end);
+    const lines = affectedText.split('\n');
+
+    const bulletSymbols = ['•', '◦', '-', '★', '>'];
+    const marker = `${symbol} `;
+
+    const transformedLines = lines.map(line => {
+      const trimmedLine = line.trimStart();
+      const currentSymbol = bulletSymbols.find(s => trimmedLine.startsWith(`${s} `));
+
+      if (currentSymbol === symbol) {
+        // Toggle off: remove exact same symbol
+        return line.replace(`${symbol} `, '');
+      } else if (currentSymbol) {
+        // Swap: replace existing different symbol
+        return line.replace(`${currentSymbol} `, `${symbol} `);
+      } else {
+        // Toggle on: add symbol
+        return `${symbol} ${line}`;
+      }
+    });
+
+    const newAffectedText = transformedLines.join('\n');
+    const newText = text.substring(0, lineStartIdx) + newAffectedText + text.substring(end);
+
+    setText(newText);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(lineStartIdx, lineStartIdx + newAffectedText.length);
+    }, 0);
+  };
+
+  const toggleHeading = (level: number) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Get the exact selected text
+    const selectedText = text.substring(start, end);
+    const hasSelection = start !== end;
+
+    // If no selection, fall back to current line logic
+    let targetStart = start;
+    let targetEnd = end;
+    let content = selectedText;
+
+    if (!hasSelection) {
+      const beforeText = text.substring(0, start);
+      targetStart = beforeText.lastIndexOf('\n') + 1;
+      const afterText = text.substring(start);
+      targetEnd = start + (afterText.indexOf('\n') !== -1 ? afterText.indexOf('\n') : afterText.length);
+      content = text.substring(targetStart, targetEnd);
+    }
+
+    const bulletSymbols = ['•', '◦', '-', '★', '>'];
+    const bulletMatch = content.match(/^([•◦★>\-] )/);
+    const bulletPrefix = bulletMatch ? bulletMatch[0] : '';
+    const textAfterBullet = bulletPrefix ? content.substring(bulletPrefix.length) : content;
+
+    const headingMatch = textAfterBullet.match(/^(#{1,6})\s(.*)/);
+    const currentLevel = headingMatch ? headingMatch[1].length : 0;
+    const cleanContent = headingMatch ? headingMatch[2] : textAfterBullet;
+
+    const marker = '#'.repeat(level) + ' ';
+    let newText = '';
+    let finalLine = '';
+
+    if (currentLevel === level) {
+      // Toggle off
+      finalLine = cleanContent;
+    } else {
+      // Swap or Add
+      finalLine = marker + cleanContent;
+    }
+
+    // Ensure leading/trailing newlines for "Auto Line Break"
+    const prefix = (targetStart > 0 && text[targetStart - 1] !== '\n') ? '\n' : '';
+    const suffix = (targetEnd < text.length && text[targetEnd] !== '\n') ? '\n' : '';
+
+    const replacement = prefix + finalLine + suffix;
+    newText = text.substring(0, targetStart) + replacement + text.substring(targetEnd);
+
+    setText(newText);
+    setTimeout(() => {
+      textarea.focus();
+      // Select the newly formatted line (including marker)
+      const newStart = targetStart + prefix.length;
+      const newEnd = newStart + finalLine.length;
+      textarea.setSelectionRange(newStart, newEnd);
+    }, 0);
+  };
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
+  const originalTextRef = useRef<string>('');
 
   return (
     <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-200">
@@ -243,8 +259,7 @@ export default function Controls({
           <PenLine size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Turn text into handwriting
-          </h2>
+          <h2 className="text-xl font-bold">Turn text into handwriting</h2>
           <p className="text-white/70 text-sm">Type or paste your text here</p>
         </div>
       </div>
@@ -257,207 +272,111 @@ export default function Controls({
             <span>Your Text</span>
           </div>
           <div className="relative">
-            <textarea
+            <RichTextEditor
+              ref={editorRef}
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full h-48 p-5 rounded-2xl border border-gray-200 bg-gray-50/50 text-black focus:bg-white focus:border-[#3B527E] focus:ring-4 focus:ring-[#3B527E]/5 transition-all outline-none resize-none"
+              onChange={setText}
               placeholder="Enter your text here..."
             />
-            {/* Formatting Pills */}
-            <div className="flex flex-wrap gap-3 mt-4">
-              {/* Basic Formatting */}
-              <div className="flex gap-2">
+          </div>
+        </div>
+
+        {/* Text Formatting Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-[#3B527E] font-semibold">
+            <PenLine size={18} />
+            <span>Text Formatting</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => toggleFormat('**')}
+              className="flex items-center justify-center gap-2 p-3 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-white hover:border-[#3B527E] hover:shadow-sm transition-all text-gray-700 hover:text-[#3B527E]"
+              title="Bold"
+            >
+              <Bold size={20} />
+            </button>
+            <button
+              onClick={() => toggleFormat('*')}
+              className="flex items-center justify-center gap-2 p-3 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-white hover:border-[#3B527E] hover:shadow-sm transition-all text-gray-700 hover:text-[#3B527E]"
+              title="Italic"
+            >
+              <Italic size={20} />
+            </button>
+            <button
+              onClick={() => toggleFormat('__')}
+              className="flex items-center justify-center gap-2 p-3 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-white hover:border-[#3B527E] hover:shadow-sm transition-all text-gray-700 hover:text-[#3B527E]"
+              title="Underline"
+            >
+              <Underline size={20} />
+            </button>
+          </div>
+          <div className="grid grid-cols-5 gap-2 mt-4">
+            {['•', '◦', '-', '★', '>'].map((symbol) => (
+              <button
+                key={symbol}
+                onClick={() => toggleBullet(symbol)}
+                className="flex items-center justify-center p-2 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-white hover:border-[#3B527E] hover:shadow-sm transition-all text-xl font-bold text-gray-700 hover:text-[#3B527E]"
+                title={`Bullet ${symbol}`}
+              >
+                {symbol}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-6 gap-2 mt-4">
+            {[1, 2, 3, 4, 5, 6].map((level) => (
+              <button
+                key={level}
+                onClick={() => toggleHeading(level)}
+                className="flex items-center justify-center p-2 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-white hover:border-[#3B527E] hover:shadow-sm transition-all text-xs font-bold text-gray-700 hover:text-[#3B527E]"
+                title={`Heading ${level}`}
+              >
+                H{level}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Heading Color</label>
+            <div className="flex flex-wrap gap-2">
+              {['#1e3a8a', '#1e293b', '#475569', '#b91c1c', '#15803d', '#92400e', '#6b21a8', '#db2777'].map((color) => (
                 <button
-                  onClick={() => toggleFormat('**', '**')}
-                  className="bg-[#2D3E64] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-[#1e2a4a] transition-colors"
-                  title="Bold"
-                >
-                  Bold
-                </button>
-                <button
-                  onClick={() => toggleFormat('*', '*')}
-                  className="bg-[#F0F2F5] text-gray-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition-colors italic"
-                  title="Italic"
-                >
-                  Italic
-                </button>
-                <button
-                  onClick={() => toggleFormat('__', '__')}
-                  className="bg-[#F0F2F5] text-gray-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition-colors underline underline-offset-4"
-                  title="Underline"
-                >
-                  Underline
-                </button>
-              </div>
-
-              {/* Heading Levels */}
-              <div className="flex gap-2 border-l border-gray-200 pl-3">
-                {[1, 2, 3, 4, 5, 6].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => {
-                      const textarea = document.querySelector('textarea');
-                      if (!textarea) return;
-
-                      const start = textarea.selectionStart;
-                      const end = textarea.selectionEnd;
-
-                      // We need to operate on full lines to ensure proper Heading syntax
-                      const allLines = text.split('\n');
-                      let startLineIndex = 0;
-                      let endLineIndex = 0;
-                      let currentPos = 0;
-
-                      // Find start and end line indices
-                      for (let i = 0; i < allLines.length; i++) {
-                        const lineLen = allLines[i].length + 1; // +1 for newline
-                        if (currentPos + lineLen > start && start >= currentPos) startLineIndex = i;
-                        if (currentPos + lineLen > end && end >= currentPos) {
-                          endLineIndex = i;
-                          break;
-                        }
-                        currentPos += lineLen;
-                      }
-
-                      const headingRegex = /^(#{1,6})\s/;
-                      const targetPrefix = '#'.repeat(level) + ' ';
-
-                      const newLines = [...allLines];
-
-                      for (let i = startLineIndex; i <= endLineIndex; i++) {
-                        const line = newLines[i];
-                        const match = line.match(headingRegex);
-
-                        if (match) {
-                          const currentLevel = match[1].length;
-                          if (currentLevel === level) {
-                            // Same level -> Remove (Toggle Off)
-                            newLines[i] = line.replace(headingRegex, '');
-                          } else {
-                            // Different level -> Replace
-                            newLines[i] = line.replace(headingRegex, targetPrefix);
-                          }
-                        } else {
-                          // No heading -> Add
-                          newLines[i] = targetPrefix + line;
-                        }
-                      }
-
-                      const newText = newLines.join('\n');
-                      setText(newText);
-
-                      setTimeout(() => {
-                        textarea.focus();
-                        // Restore selection loosely (keeping it simple as exact pos tracking is complex with replacements)
-                        textarea.setSelectionRange(start, start + (newText.length - text.length));
-                      }, 0);
-                    }}
-                    className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                    title={`Heading ${level}`}
-                  >
-                    H{level}
-                  </button>
-                ))}
-
-                {/* Specific Heading Color Picker */}
-                <div className="flex items-center ml-2 border-l border-gray-200 pl-3 gap-2" title="Selected Heading Color">
-                  <div className="relative group">
-                    <div className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden cursor-pointer shadow-sm hover:scale-110 transition-transform">
-                      <input
-                        type="color"
-                        className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer opacity-0"
-                        onChange={(e) => {
-                          const color = e.target.value;
-                          const textarea = document.querySelector('textarea');
-                          if (!textarea) return;
-
-                          const start = textarea.selectionStart;
-                          const allLines = text.split('\n');
-                          let currentPos = 0;
-                          let lineIndex = -1;
-
-                          // Find current line index
-                          for (let i = 0; i < allLines.length; i++) {
-                            const lineLen = allLines[i].length + 1;
-                            if (currentPos + lineLen > start) {
-                              lineIndex = i;
-                              break;
-                            }
-                            currentPos += lineLen;
-                          }
-
-                          if (lineIndex !== -1) {
-                            // Check if line is a heading
-                            const line = allLines[lineIndex];
-                            const headingRegex = /^(#{1,6})(?:\[color:.*?\])?\s+(.*)$/;
-                            const match = line.match(headingRegex);
-
-                            if (match) {
-                              // It's a heading, inject color
-                              const levelHashes = match[1];
-                              const content = match[2];
-                              // Reconstruct with new color
-                              allLines[lineIndex] = `${levelHashes}[color:${color}] ${content}`;
-
-                              const newText = allLines.join('\n');
-                              setText(newText);
-
-                              setTimeout(() => {
-                                textarea.focus();
-                                textarea.setSelectionRange(start, start); // Restore cursor
-                              }, 0);
-                            }
-                          }
-                        }}
-                      />
-                      <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-80 group-hover:opacity-100" />
-                    </div>
-                    <span className="text-[10px] text-gray-400 font-medium absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                      Tint
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lists */}
-              <div className="flex gap-2 border-l border-gray-200 pl-3">
-                <button
-                  onClick={() => toggleList('•')}
-                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                  title="Bullet List"
-                >
-                  <List size={16} />
-                </button>
-                <button
-                  onClick={() => toggleList('◦')}
-                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                  title="Hollow Bullet"
-                >
-                  ◦
-                </button>
-                <button
-                  onClick={() => toggleList('-')}
-                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                  title="Dash List"
-                >
-                  -
-                </button>
-                <button
-                  onClick={() => toggleList('★')}
-                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                  title="Star List"
-                >
-                  ★
-                </button>
-                <button
-                  onClick={() => toggleList('>')}
-                  className="bg-white border border-gray-200 text-[#3B527E] w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold hover:bg-[#3B527E] hover:text-white hover:border-[#3B527E] transition-all shadow-sm"
-                  title="Arrow List"
-                >
-                  &gt;
-                </button>
-              </div>
+                  key={color}
+                  onClick={() => setHeadingColor(color)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm transform hover:scale-110 ${headingColor === color ? 'border-[#3B527E] scale-110' : 'border-white'
+                    }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+              ))}
             </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100" />
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-[#3B527E] font-semibold">
+            <MousePointer2 size={18} />
+            <span>Elements</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => addElement('text')}
+              className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-50/50 border border-gray-100 rounded-2xl hover:bg-white hover:border-[#3B527E] hover:shadow-md transition-all group"
+            >
+              <div className="flex items-end gap-0.5">
+                <span className="text-red-600 font-bold text-lg leading-none">T</span>
+                <span className="text-red-600 font-bold text-2xl leading-none">T</span>
+              </div>
+              <span className="text-sm font-medium text-gray-600 group-hover:text-[#3B527E]">Text Field</span>
+            </button>
+            <button
+              onClick={() => addElement('heading')}
+              className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-50/50 border border-gray-100 rounded-2xl hover:bg-white hover:border-[#3B527E] hover:shadow-md transition-all group"
+            >
+              <span className="text-red-600 font-bold text-3xl leading-none">H</span>
+              <span className="text-sm font-medium text-gray-600 group-hover:text-[#3B527E]">Heading</span>
+            </button>
           </div>
         </div>
 
@@ -523,23 +442,6 @@ export default function Controls({
               </div>
             </div>
 
-            {/* Heading Color */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Heading Color</label>
-              <div className="relative group">
-                <select
-                  value={headingColor}
-                  onChange={(e) => setHeadingColor(e.target.value)}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-700 appearance-none cursor-pointer focus:bg-white focus:border-[#3B527E] outline-none transition-all"
-                >
-                  {inkColors.map((c) => (
-                    <option key={c.value} value={c.value}>{c.name}</option>
-                  ))}
-                </select>
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-gray-100 shadow-sm" style={{ backgroundColor: headingColor }} />
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-gray-600 transition-colors" size={16} />
-              </div>
-            </div>
 
             {/* Font Size */}
             <div className="space-y-2">
@@ -626,7 +528,7 @@ export default function Controls({
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
