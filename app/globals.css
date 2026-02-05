@@ -22,3 +22,53 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 }
+
+/* Perfect Dynamic Page Formatting Overrides - Scoped to Live Site Only */
+.site-content-area {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.site-content-area .ql-editor {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  text-align: left !important;
+  /* Reverted to match Editor */
+  hyphens: none !important;
+  text-rendering: optimizeLegibility !important;
+  word-break: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.site-content-area .ql-editor a {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+}
+
+/* Let default Quill styles handle paragraph and line breaks for a single-gap look */
+.site-content-area .ql-editor p {
+  margin-bottom: inherit !important;
+}
+
+.site-content-area .ql-editor ul,
+.site-content-area .ql-editor ol {
+  padding-left: 1.5rem !important;
+  margin-bottom: 1.25em !important;
+  list-style: revert !important;
+}
+
+.site-content-area .ql-editor li {
+  display: list-item !important;
+  list-style: inherit !important;
+  padding-left: 0.5rem !important;
+  margin-bottom: 0.6em !important;
+}
+
+/* Ensure images don't break layout */
+.site-content-area .ql-editor img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px !important;
+  margin: 1.5em 0 !important;
+}
