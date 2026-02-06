@@ -43,46 +43,38 @@ interface StyledPart {
 }
 
 const parseMarkdown = (raw: string, currentStyles: Set<StyleType>): StyledPart[] => {
-  const formats = [
-    { marker: '**', type: 'bold' as StyleType },
-    { marker: '*', type: 'italic' as StyleType },
-    { marker: '__', type: 'underline' as StyleType }
-  ];
+  const results: StyledPart[] = [];
+  const styles = new Set(currentStyles);
+  const markerRegex = /(\*\*|\*|__)/g;
 
-  let bestIdx = Infinity;
-  let bestType: StyleType | null = null;
-  let matchLen = 0;
+  let lastIndex = 0;
+  let match;
 
-  formats.forEach(f => {
-    const idx = raw.indexOf(f.marker);
-    if (idx !== -1 && idx < bestIdx) {
-      bestIdx = idx;
-      bestType = f.type;
-      matchLen = f.marker.length;
+  while ((match = markerRegex.exec(raw)) !== null) {
+    const textBefore = raw.substring(lastIndex, match.index);
+    if (textBefore) {
+      results.push({ content: textBefore, styles: new Set(styles) });
     }
-  });
 
-  if (bestIdx === Infinity) {
-    return [{ content: raw, styles: new Set(currentStyles) }];
+    const marker = match[0];
+    const type: StyleType = marker === '**' ? 'bold' : marker === '*' ? 'italic' : 'underline';
+
+    if (styles.has(type)) {
+      styles.delete(type);
+    } else {
+      styles.add(type);
+    }
+
+    lastIndex = markerRegex.lastIndex;
   }
 
-  const results: StyledPart[] = [];
-  const pre = raw.substring(0, bestIdx);
-  if (pre) results.push({ content: pre, styles: new Set(currentStyles) });
+  const remainingText = raw.substring(lastIndex);
+  if (remainingText) {
+    results.push({ content: remainingText, styles: new Set(styles) });
+  }
 
-  const remainder = raw.substring(bestIdx);
-  const marker = formats.find(f => f.type === bestType)!.marker;
-  const closeIdx = remainder.indexOf(marker, matchLen);
-
-  if (closeIdx !== -1) {
-    const inner = remainder.substring(matchLen, closeIdx);
-    const nextStyles = new Set(currentStyles);
-    nextStyles.add(bestType!);
-    results.push(...parseMarkdown(inner, nextStyles));
-    results.push(...parseMarkdown(remainder.substring(closeIdx + matchLen), new Set(currentStyles)));
-  } else {
-    results.push({ content: remainder.substring(0, matchLen), styles: new Set(currentStyles) });
-    results.push(...parseMarkdown(remainder.substring(matchLen), new Set(currentStyles)));
+  if (results.length === 0 && raw) {
+    results.push({ content: raw, styles: new Set(currentStyles) });
   }
 
   return results;

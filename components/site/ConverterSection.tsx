@@ -73,16 +73,40 @@ export default function ConverterSection() {
     let horizontalMarginRight = 48;
 
     if (paper === 'ruled') {
-      horizontalMarginLeft = 72; // 4.5rem = ~72px
+      horizontalMarginLeft = 72; // 4.5rem
       verticalMarginTop = 8; // 0.5rem
-      verticalMarginBottom = 8; // Reduce bottom margin to match top and maximize space
+      verticalMarginBottom = 8;
     } else if (paper === 'notebook-margin') {
       horizontalMarginLeft = 64; // 4rem
       verticalMarginTop = 8; // 0.5rem
-    } else if (paper === 'assignment-1' || paper === 'assignment-2') {
+    } else if (paper === 'assignment-1') {
       verticalMarginTop = 48; // 3rem
-      horizontalMarginLeft = 32; // 2rem or 3rem
+      horizontalMarginLeft = 32; // 2rem
       horizontalMarginRight = 32;
+    } else if (paper === 'assignment-2') {
+      verticalMarginTop = 48; // 3rem
+      horizontalMarginLeft = 48; // 3rem
+      horizontalMarginRight = 48;
+    } else if (paper === 'floral-rose' || paper === 'floral-lavender' || paper === 'floral-tropical' || paper === 'heart-border' || paper === 'geometric' || paper === 'wishlist-3' || paper === 'wishlist-5') {
+      horizontalMarginLeft = 80; // 5rem
+      horizontalMarginRight = 80;
+      verticalMarginTop = 80;
+    } else if (paper === 'parchment' || paper === 'sketchbook' || paper === 'blueprint' || paper === 'antique-blue' || paper === 'wishlist-2' || paper === 'wishlist-4') {
+      horizontalMarginLeft = 64; // 4rem
+      horizontalMarginRight = 64;
+      verticalMarginTop = 64;
+    } else if (paper === 'classic-scroll') {
+      horizontalMarginLeft = 80; // 5rem
+      horizontalMarginRight = 80;
+      verticalMarginTop = 96; // 6rem
+    } else if (paper === 'wishlist-1') {
+      horizontalMarginLeft = 64; // 4rem
+      horizontalMarginRight = 64;
+      verticalMarginTop = 96; // 6rem
+    } else if (paper === 'border-2') {
+      horizontalMarginLeft = 96; // 6rem
+      horizontalMarginRight = 96;
+      verticalMarginTop = 96;
     }
 
     // Adjust usable width/height
@@ -167,13 +191,12 @@ export default function ConverterSection() {
         const word = words[j];
         if (word === '') continue;
 
-        // Measure word width using CLEAN text
+        // Measure word width
         const cleanWord = removeMarkdown(word);
-        let wordWidth = 0;
-        for (let charIndex = 0; charIndex < cleanWord.length; charIndex++) {
-          measureDiv.textContent = cleanWord[charIndex];
-          wordWidth += measureDiv.offsetWidth;
-        }
+        measureDiv.textContent = cleanWord;
+        let wordWidth = measureDiv.offsetWidth;
+
+        // Add letter spacing (wordSpacing is applied to each character)
         wordWidth += (cleanWord.length * wordSpacing);
 
         if (currentLineWidth + wordWidth > availableWidth) {

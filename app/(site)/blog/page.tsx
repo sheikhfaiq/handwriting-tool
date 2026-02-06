@@ -1,7 +1,16 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+
+export const metadata = {
+    title: "Blog",
+    description: "Explore our blog for helpful guides,latest trends,expert tips and easy to understand articles on text to handwriting.",
+    openGraph: {
+        title: "Blog",
+        description: "Explore our blog for helpful guides,latest trends,expert tips and easy to understand articles on text to handwriting.",
+    }
+};
 
 export default async function BlogListPage() {
     const posts = await (prisma as any).post.findMany({

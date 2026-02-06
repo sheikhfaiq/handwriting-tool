@@ -33,22 +33,35 @@ body {
   font-size: 16px !important;
   line-height: 1.6 !important;
   text-align: left !important;
-  /* Reverted to match Editor */
+  /* Prevent mid-word breaking and horizontal scroll */
   hyphens: none !important;
-  text-rendering: optimizeLegibility !important;
   word-break: normal !important;
-  word-wrap: break-word !important;
   overflow-wrap: break-word !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+.site-content-area .ql-editor * {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+.site-content-area .ql-editor p {
+  margin-bottom: 0 !important;
+}
+
+.site-content-area .ql-editor h1,
+.site-content-area .ql-editor h2,
+.site-content-area .ql-editor h3,
+.site-content-area .ql-editor h4,
+.site-content-area .ql-editor h5,
+.site-content-area .ql-editor h6 {
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .site-content-area .ql-editor a {
   color: #2563eb !important;
   text-decoration: underline !important;
-}
-
-/* Let default Quill styles handle paragraph and line breaks for a single-gap look */
-.site-content-area .ql-editor p {
-  margin-bottom: inherit !important;
 }
 
 .site-content-area .ql-editor ul,

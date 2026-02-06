@@ -4,6 +4,30 @@ import "react-quill-new/dist/quill.snow.css";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const page = await prisma.page.findUnique({
+        where: { slug: slug },
+        select: { title: true, metaDescription: true }
+    });
+
+    if (!page) return { title: "Page Not Found" };
+
+    return {
+        title: page.title,
+        description: page.metaDescription || `Read more about ${page.title}`,
+        openGraph: {
+            title: page.title,
+            description: page.metaDescription || `Read more about ${page.title}`,
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: page.title,
+            description: page.metaDescription || `Read more about ${page.title}`,
+        }
+    };
+}
+
 export default async function StaticPage(props: { params: Promise<{ slug: string }> }) {
     const params = await props.params;
     const page = await prisma.page.findUnique({

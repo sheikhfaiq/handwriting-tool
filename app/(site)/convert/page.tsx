@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "Convert Text to Handwriting | Text To Handwriting",
+  description: "Transform your typed text into authentic-looking handwriting instantly with our free online conversion tool.",
+};
+
 export default function ConvertPage() {
   return (
     <div className="container mx-auto px-4 py-8">

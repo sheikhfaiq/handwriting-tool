@@ -110,7 +110,10 @@ const Footer = () => {
                     {/* About Section */}
                     <div className="flex flex-col items-center lg:items-center text-center">
                         <h4 className="text-lg font-bold mb-6 text-white tracking-widest uppercase text-sm">Text to Handwriting</h4>
-                        <p className="text-[#eae3db]/80 text-sm leading-relaxed max-w-xs text-justify break-words hyphens-auto">
+                        <p
+                            className="text-[#eae3db]/80 text-sm leading-relaxed max-w-xs"
+                            style={{ wordBreak: 'normal', overflowWrap: 'break-word', hyphens: 'none' }}
+                        >
                             Text to Handwriting is a free online tool that changes typed text into real-looking Handwriting.
                             You can make custom handwritten notes,
                             download them as images or PDFs, and use many other handwriting features easily.

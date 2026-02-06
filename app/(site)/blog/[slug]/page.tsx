@@ -1,7 +1,14 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
+import "react-quill-new/dist/quill.snow.css";
+
+
+// Revalidate every hour
 export const revalidate = 3600;
+
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -79,10 +86,18 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     </p>
                 </header>
 
-                <div
-                    className="prose prose-slate lg:prose-lg max-w-none text-justify break-words hyphens-auto"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                />
+                <div className="site-content-area ql-snow">
+                    <div
+                        className="ql-editor"
+                        style={{
+                            wordBreak: 'normal',
+                            overflowWrap: 'break-word',
+                            hyphens: 'none',
+                            textAlign: 'left'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
+                </div>
 
                 <div className="mt-12 pt-8 border-t border-slate-200">
                     <a href="/blog" className="text-blue-600 font-semibold hover:underline flex items-center gap-2">

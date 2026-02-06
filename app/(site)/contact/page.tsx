@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "Contact Us | Text To Handwriting",
+  description: "Get in touch with Text To Handwriting for any queries, feedback, or support regarding our digital handwriting converter.",
+};
+
 export default function ContactPage() {
   return (
     <div className="container mx-auto px-4 py-8">
