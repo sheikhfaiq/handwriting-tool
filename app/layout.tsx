@@ -146,7 +146,7 @@ export const metadata: Metadata = {
     default: "Text To Handwriting - Free Online Handwriting Converter",
     template: "%s | Text To Handwriting"
   },
-  description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds.",
+  description: "Convert text into beautiful handwriting instantly with customizable fonts, colors, and paper backgrounds. Free online tool with various styles.",
   authors: [{ name: "Text To Handwriting" }],
   creator: "Text To Handwriting",
   publisher: "Text To Handwriting",
