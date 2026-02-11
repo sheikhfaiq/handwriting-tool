@@ -5,47 +5,48 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PenTool, Menu as MenuIcon, X } from "lucide-react";
 
-export default function Header() {
+export interface LinkItem {
+  name: string;
+  href: string;
+  label?: string;
+  url?: string;
+}
+
+export interface HeaderProps {
+  initialNavItems: LinkItem[];
+}
+
+export default function Header({ initialNavItems = [] }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [navLinks, setNavLinks] = useState([
-    { name: "Home", href: "/" },
-    { name: "Blog", href: "/blog" },
-  ]);
-  const pathname = usePathname();
+  const [navLinks, setNavLinks] = useState<LinkItem[]>([]);
 
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const res = await fetch("/api/admin/menus");
-        const data = await res.json();
-        const header = data.find((m: any) => m.name === "HEADER");
+    // Determine the base links
+    const baseLinks = [
+      { name: "Home", href: "/" },
+      { name: "Blog", href: "/blog" },
+    ];
 
-        const baseLinks = [
-          { name: "Home", href: "/" },
-          { name: "Blog", href: "/blog" },
-        ];
+    if (initialNavItems && initialNavItems.length > 0) {
+      // Normalize server items to match local shape
+      const menuLinks = initialNavItems.map((item: any) => ({
+        name: item.label || item.name,
+        href: item.url || item.href
+      }));
 
-        if (header && header.items.length > 0) {
-          const menuLinks = header.items.map((item: any) => ({
-            name: item.label,
-            href: item.url
-          }));
+      // Filter out duplicates if Home/Blog were already in the database menu
+      const filteredMenuLinks = menuLinks.filter((ml: any) =>
+        !baseLinks.some(bl => bl.href === ml.href)
+      );
 
-          // Filter out duplicates if Home/Blog were already in the database menu
-          const filteredMenuLinks = menuLinks.filter((ml: any) =>
-            !baseLinks.some(bl => bl.href === ml.href)
-          );
+      setNavLinks([...baseLinks, ...filteredMenuLinks]);
+    } else {
+      setNavLinks(baseLinks);
+    }
+  }, [initialNavItems]);
 
-          setNavLinks([...baseLinks, ...filteredMenuLinks]);
-        } else {
-          setNavLinks(baseLinks);
-        }
-      } catch (error) {
-        console.error("Failed to fetch menu", error);
-      }
-    };
-    fetchMenu();
-  }, []);
+  const pathname = usePathname();
+
 
   return (
     <header className="relative z-50 bg-white border-b border-gray-100 py-5">

@@ -12,27 +12,24 @@ import {
     PenTool
 } from 'lucide-react';
 
-const Footer = () => {
-    const [footerNav, setFooterNav] = React.useState<any[]>([]);
-    const [footerHelp, setFooterHelp] = React.useState<any[]>([]);
+export interface LinkItem {
+    label: string;
+    url: string;
+}
+
+export interface FooterProps {
+    initialNavItems: LinkItem[];
+    initialHelpItems: LinkItem[];
+}
+
+const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) => {
+    const [footerNav, setFooterNav] = React.useState<LinkItem[]>([]);
+    const [footerHelp, setFooterHelp] = React.useState<LinkItem[]>([]);
 
     React.useEffect(() => {
-        const fetchMenus = async () => {
-            try {
-                const res = await fetch("/api/admin/menus");
-                const data = await res.json();
-
-                const navMenu = data.find((m: any) => m.name === "FOOTER_NAV");
-                if (navMenu) setFooterNav(navMenu.items);
-
-                const helpMenu = data.find((m: any) => m.name === "FOOTER_HELP");
-                if (helpMenu) setFooterHelp(helpMenu.items);
-            } catch (error) {
-                console.error("Failed to fetch footer menus", error);
-            }
-        };
-        fetchMenus();
-    }, []);
+        if (initialNavItems.length > 0) setFooterNav(initialNavItems);
+        if (initialHelpItems.length > 0) setFooterHelp(initialHelpItems);
+    }, [initialNavItems, initialHelpItems]);
 
 
     const defaultNav = [
