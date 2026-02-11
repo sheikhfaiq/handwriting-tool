@@ -32,17 +32,37 @@ body {
 .site-content-area .ql-editor {
   font-size: 16px !important;
   line-height: 1.6 !important;
-  text-align: left !important;
   /* Prevent mid-word breaking and horizontal scroll */
   hyphens: none !important;
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
+  white-space: pre-wrap !important;
+  /* Match Quill default */
+  word-break: keep-all !important;
+  /* Strictly keep words together */
+  word-wrap: normal !important;
+  /* Legacy support */
+  overflow-wrap: normal !important;
+  /* Never break words mid-string */
   text-rendering: optimizeLegibility !important;
 }
 
+/* Better styling for text with background color */
+.site-content-area .ql-editor span[style*="background-color"] {
+  padding: 4px 6px;
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Ensure alignment works correctly */
+.site-content-area .ql-editor .ql-align-center {
+  text-align: center;
+}
+
 .site-content-area .ql-editor * {
+  white-space: pre-wrap !important;
   word-break: normal !important;
   overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
 }
 
 .site-content-area .ql-editor p {

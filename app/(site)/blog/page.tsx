@@ -1,15 +1,14 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-    title: "Blog",
-    description: "Explore our blog for helpful guides,latest trends,expert tips and easy to understand articles on text to handwriting.",
-    openGraph: {
-        title: "Blog",
-        description: "Explore our blog for helpful guides,latest trends,expert tips and easy to understand articles on text to handwriting.",
-    }
+export const metadata: Metadata = {
+    title: {
+        absolute: "Blog",
+    },
+    description: "Read the latest news and updates from Text To Handwriting.",
 };
 
 export default async function BlogListPage() {

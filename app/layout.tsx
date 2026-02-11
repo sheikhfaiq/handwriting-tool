@@ -166,7 +166,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://textohandwritting.com",
     title: "Text To Handwriting - Free Online Handwriting Converter",
-    description: "Convert typed text into beautiful handwriting instantly. Free online tool with multiple handwriting styles, customizable fonts, colors, and paper backgrounds.",
+    description: "Convert text into beautiful handwriting instantly with customizable fonts, colors, and paper backgrounds. Free online tool with various styles.",
     siteName: "Text To Handwriting",
     images: [
       {

@@ -20,7 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     if (!post) return { title: "Post Not Found" };
 
     return {
-        title: post.title,
+        title: {
+            absolute: post.title,
+        },
         description: post.metaDescription || post.excerpt || `Read more about ${post.title}`,
         openGraph: {
             title: post.title,
@@ -47,6 +49,16 @@ export async function generateStaticParams() {
     }));
 }
 
+const cleanContent = (html: string) => {
+    if (!html) return "";
+    // Replace non-breaking spaces with normal spaces to allow wrapping
+    // Remove soft hyphens to prevent weird breaks
+    return html
+        .replace(/\u00A0/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\u00AD/g, '');
+};
+
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
     const params = await props.params;
     const post = await (prisma as any).post.findUnique({
@@ -60,7 +72,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
     return (
         <div className="bg-[#fdfbf7] min-h-screen overflow-x-hidden">
-            <article className="max-w-3xl mx-auto py-12 px-4">
+            <article className="max-w-5xl mx-auto py-12 px-4">
                 {post.coverImage && (
                     <img
                         src={post.coverImage}
@@ -90,12 +102,11 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     <div
                         className="ql-editor"
                         style={{
-                            wordBreak: 'normal',
-                            overflowWrap: 'break-word',
-                            hyphens: 'none',
-                            textAlign: 'left'
+                            wordBreak: 'keep-all',
+                            overflowWrap: 'normal',
+                            hyphens: 'none'
                         }}
-                        dangerouslySetInnerHTML={{ __html: post.content }}
+                        dangerouslySetInnerHTML={{ __html: cleanContent(post.content) }}
                     />
                 </div>
 
