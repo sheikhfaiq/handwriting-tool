@@ -216,7 +216,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <ScrollToTop />
         </AuthProvider>
       </body>
     </html>

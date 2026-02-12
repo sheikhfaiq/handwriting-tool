@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     try {
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
             return menu;
         });
 
+        revalidatePath('/'); // Revalidate all pages to show new menu immediately
         return NextResponse.json(menu);
     } catch (error) {
         console.error("Save menu error:", error);
