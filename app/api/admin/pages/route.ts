@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 
 const prismaAny = prisma as any;
@@ -28,15 +29,21 @@ export async function POST(req: Request) {
         const { title, content, metaDescription, published } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
+        const isSystemAdmin = session.user?.email === "admin@gmail.com";
+        const publishedState = isSystemAdmin ? (published || false) : false;
+
         const page = await prismaAny.page.create({
             data: {
                 title,
                 content,
                 metaDescription,
-                published: published || false,
+                published: publishedState,
                 slug,
             },
         });
+
+        revalidatePath(`/${slug}`);
+        revalidatePath("/admin/manage-pages");
 
         return NextResponse.json(page, { status: 201 });
     } catch (error) {

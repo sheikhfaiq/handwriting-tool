@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 
 const prismaAny = prisma as any;
@@ -41,16 +42,28 @@ export async function PUT(
         const { title, content, metaDescription, published } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
+        const isSystemAdmin = session.user?.email === "admin@gmail.com";
+        const existingPage = await prismaAny.page.findUnique({ where: { id: params.id } });
+
+        // System Admins can set published status. Non-admins are forced to false (Draft).
+        const publishedState = isSystemAdmin ? published : false;
+
         const page = await prismaAny.page.update({
             where: { id: params.id },
             data: {
                 title,
                 content,
                 metaDescription,
-                published,
+                published: publishedState,
                 slug,
             },
         });
+
+        revalidatePath(`/${slug}`);
+        if (existingPage?.slug && existingPage.slug !== slug) {
+            revalidatePath(`/${existingPage.slug}`);
+        }
+        revalidatePath("/admin/manage-pages");
 
         return NextResponse.json(page);
     } catch (error) {

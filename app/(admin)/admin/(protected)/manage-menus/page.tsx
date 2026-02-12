@@ -9,11 +9,14 @@ import {
     Save,
     Loader2,
     ChevronRight,
+    ChevronDown,
     Search,
     Layout,
     Type,
     Link as LinkIcon,
-    AlertCircle
+    AlertCircle,
+    ArrowRight,
+    ArrowLeft
 } from "lucide-react";
 
 interface MenuItem {
@@ -21,6 +24,8 @@ interface MenuItem {
     label: string;
     url: string;
     order: number;
+    depth: number; // 0 = root, 1 = child
+    parentId?: string | null;
 }
 
 interface Menu {
@@ -39,6 +44,14 @@ export default function ManageMenus() {
     const [newMenuName, setNewMenuName] = useState("");
     const [isCreatingMenu, setIsCreatingMenu] = useState(false);
 
+    // Sidebar Accordion State
+    const [sectionsOpen, setSectionsOpen] = useState({
+        pages: true,
+        posts: false,
+        links: false,
+        defaults: true
+    });
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -55,8 +68,14 @@ export default function ManageMenus() {
             const pagesData = await pagesRes.json();
             const postsData = await postsRes.json();
 
-            // Ensure compulsory menus exist in the list
-            let finalMenus = menusData;
+            // Reconstruct hierarchy from parentId if needed
+            const processedMenus = menusData.map((m: any) => ({
+                ...m,
+                items: computeDepthFromStructure(m.items)
+            }));
+
+            // Ensure compulsory menus exist
+            let finalMenus = processedMenus;
             const compulsory = ["HEADER", "FOOTER", "FOOTER_NAV", "FOOTER_HELP"];
             compulsory.forEach(name => {
                 if (!finalMenus.find((m: any) => m.name === name)) {
@@ -74,12 +93,30 @@ export default function ManageMenus() {
         }
     };
 
+    // Helper: Compute depth based on parentId for initial load
+    const computeDepthFromStructure = (items: any[]) => {
+        if (!items) return [];
+        // Map ID -> Item
+        const map = new Map();
+        items.forEach(i => map.set(i.id, i));
+
+        return items.map(i => {
+            let depth = 0;
+            let parent = map.get(i.parentId);
+            while (parent) {
+                depth++;
+                parent = map.get(parent.parentId);
+            }
+            return { ...i, depth };
+        });
+    };
+
     const activeMenu = menus.find(m => m.name === activeMenuName) || { name: activeMenuName, items: [] };
 
     const onDragEnd = (result: any) => {
         if (!result.destination) return;
 
-        const items = [...activeMenu.items];
+        const items = Array.from(activeMenu.items);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
 
@@ -87,11 +124,45 @@ export default function ManageMenus() {
     };
 
     const updateMenuItems = (items: MenuItem[]) => {
+        // Recalculate parentId based on depth and order logic?
+        // Actually, Indent/Outdent should explicitly set parentId.
+        // But for Drag/Drop order change, we might break the "Parent must be above Child" rule if not careful.
+        // Let's implement robust "Save" logic that reconstructs parentIds based on visual depth.
         setMenus(menus.map(m => m.name === activeMenuName ? { ...m, items } : m));
     };
 
+    const indentItem = (index: number) => {
+        const items = [...activeMenu.items];
+        const item = items[index];
+        const prevItem = items[index - 1];
+
+        if (!prevItem) return; // Cannot indent top item
+        if (item.depth >= 5) return; // Max depth
+
+        // Logic: Indent increases depth.
+        item.depth = (item.depth || 0) + 1;
+        updateMenuItems(items);
+    };
+
+    const outdentItem = (index: number) => {
+        const items = [...activeMenu.items];
+        const item = items[index];
+
+        if (!item.depth || item.depth <= 0) return;
+
+        item.depth = item.depth - 1;
+        updateMenuItems(items);
+    };
+
     const addItem = (label: string, url: string) => {
-        const newItem = { id: `new-${Date.now()}`, label, url, order: activeMenu.items.length };
+        const newItem: MenuItem = {
+            id: `new-${Date.now()}`,
+            label,
+            url,
+            order: activeMenu.items.length,
+            depth: 0,
+            parentId: null
+        };
         updateMenuItems([...activeMenu.items, newItem]);
     };
 
@@ -107,13 +178,38 @@ export default function ManageMenus() {
     const saveMenu = async () => {
         setSaving(true);
         try {
+            // Reconstruct parentIds based on depth and order
+            const itemsToSave = [];
+            const parentStack: { [depth: number]: string | null } = { [-1]: null };
+
+            for (const item of activeMenu.items) {
+                const depth = item.depth || 0;
+                // Parent is the last item seen at depth-1
+                const parentId = parentStack[depth - 1] || null;
+
+                // Add to stack for children
+                parentStack[depth] = item.id;
+
+                // Clear deeper stacks
+                for (let d = depth + 1; d < 10; d++) {
+                    delete parentStack[d];
+                }
+
+                itemsToSave.push({
+                    ...item,
+                    parentId,
+                    depth // Keep depth for next fetch optimistically? (API doesn't store depth, only parentId)
+                });
+            }
+
             const res = await fetch("/api/admin/menus", {
                 method: "POST",
-                body: JSON.stringify({ name: activeMenuName, items: activeMenu.items }),
+                body: JSON.stringify({ name: activeMenuName, items: itemsToSave }),
                 headers: { "Content-Type": "application/json" }
             });
             if (res.ok) alert(`Menu "${activeMenuName}" saved successfully!`);
         } catch (error) {
+            console.error(error);
             alert("Failed to save menu");
         } finally {
             setSaving(false);
@@ -153,6 +249,10 @@ export default function ManageMenus() {
         }
     };
 
+    const toggleSection = (section: keyof typeof sectionsOpen) => {
+        setSectionsOpen(prev => ({ ...prev, [section]: !prev[section] }));
+    };
+
     if (loading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#1e355e]" size={40} /></div>;
 
     return (
@@ -160,7 +260,7 @@ export default function ManageMenus() {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black text-[#1e355e] tracking-tight">Menus</h1>
-                    <p className="text-gray-400 mt-2">Manage your website navigation menus just like WordPress.</p>
+                    <p className="text-gray-400 mt-2">Manage your website navigation menus.</p>
                 </div>
                 <button
                     onClick={() => setIsCreatingMenu(true)}
@@ -193,77 +293,135 @@ export default function ManageMenus() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
                 {/* Sidebar: Add Menu Items */}
-                <div className="space-y-6">
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-black text-[#1e355e] mb-4 flex items-center gap-2">
-                            <Layout size={18} className="text-blue-500" /> Pages
-                        </h3>
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                            {pages.map(page => (
+                <div className="space-y-4">
+
+                    {/* Default Pages */}
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+                        <button
+                            onClick={() => toggleSection('defaults')}
+                            className="w-full flex items-center justify-between p-6 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            <h3 className="text-lg font-black text-[#1e355e] flex items-center gap-2">
+                                <Layout size={18} className="text-purple-500" /> Default Pages
+                            </h3>
+                            {sectionsOpen.defaults ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        </button>
+                        {sectionsOpen.defaults && (
+                            <div className="p-6 pt-0 space-y-2 border-t border-gray-50">
                                 <button
-                                    key={page.id}
-                                    onClick={() => addItem(page.title, `/${page.slug}`)}
+                                    onClick={() => addItem("Home", "/")}
                                     className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                 >
-                                    {page.title}
-                                    <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />
+                                    Home <Plus size={16} className="text-gray-300 group-hover:text-purple-500" />
                                 </button>
-                            ))}
-                            {pages.length === 0 && <p className="text-xs text-gray-400 italic">No pages found.</p>}
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-black text-[#1e355e] mb-4 flex items-center gap-2">
-                            <Type size={18} className="text-orange-500" /> Posts
-                        </h3>
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                            {posts.map(post => (
                                 <button
-                                    key={post.id}
-                                    onClick={() => addItem(post.title, `/blog/${post.slug}`)}
+                                    onClick={() => addItem("Blog", "/blog")}
                                     className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                 >
-                                    <span className="truncate flex-1 mr-2">{post.title}</span>
-                                    <Plus size={16} className="text-gray-300 group-hover:text-orange-500" />
+                                    Blog <Plus size={16} className="text-gray-300 group-hover:text-purple-500" />
                                 </button>
-                            ))}
-                            {posts.length === 0 && <p className="text-xs text-gray-400 italic">No posts found.</p>}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-black text-[#1e355e] mb-4 flex items-center gap-2">
-                            <LinkIcon size={18} className="text-green-500" /> Custom Link
-                        </h3>
-                        <div className="space-y-3">
-                            <input
-                                type="text"
-                                placeholder="Label (e.g., Google)"
-                                id="custom-label"
-                                className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-green-500/10"
-                            />
-                            <input
-                                type="text"
-                                placeholder="URL (e.g., https://...)"
-                                id="custom-url"
-                                className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-green-500/10"
-                            />
-                            <button
-                                onClick={() => {
-                                    const l = (document.getElementById('custom-label') as HTMLInputElement).value;
-                                    const u = (document.getElementById('custom-url') as HTMLInputElement).value;
-                                    if (l && u) {
-                                        addItem(l, u);
-                                        (document.getElementById('custom-label') as HTMLInputElement).value = '';
-                                        (document.getElementById('custom-url') as HTMLInputElement).value = '';
-                                    }
-                                }}
-                                className="w-full py-2.5 bg-gray-100 text-[#1e355e] rounded-xl font-bold text-sm hover:bg-green-500 hover:text-white transition-all"
-                            >
-                                Add to Menu
-                            </button>
-                        </div>
+                    {/* Pages */}
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+                        <button
+                            onClick={() => toggleSection('pages')}
+                            className="w-full flex items-center justify-between p-6 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            <h3 className="text-lg font-black text-[#1e355e] flex items-center gap-2">
+                                <Layout size={18} className="text-blue-500" /> Pages
+                            </h3>
+                            {sectionsOpen.pages ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        </button>
+                        {sectionsOpen.pages && (
+                            <div className="p-6 pt-0 space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar border-t border-gray-50">
+                                {pages.map(page => (
+                                    <button
+                                        key={page.id}
+                                        onClick={() => addItem(page.title, `/${page.slug}`)}
+                                        className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                    >
+                                        {page.title}
+                                        <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />
+                                    </button>
+                                ))}
+                                {pages.length === 0 && <p className="text-xs text-gray-400 italic p-3">No pages found.</p>}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Posts */}
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+                        <button
+                            onClick={() => toggleSection('posts')}
+                            className="w-full flex items-center justify-between p-6 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            <h3 className="text-lg font-black text-[#1e355e] flex items-center gap-2">
+                                <Type size={18} className="text-orange-500" /> Posts
+                            </h3>
+                            {sectionsOpen.posts ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        </button>
+                        {sectionsOpen.posts && (
+                            <div className="p-6 pt-0 space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar border-t border-gray-50">
+                                {posts.map(post => (
+                                    <button
+                                        key={post.id}
+                                        onClick={() => addItem(post.title, `/blog/${post.slug}`)}
+                                        className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                    >
+                                        <span className="truncate flex-1 mr-2">{post.title}</span>
+                                        <Plus size={16} className="text-gray-300 group-hover:text-orange-500" />
+                                    </button>
+                                ))}
+                                {posts.length === 0 && <p className="text-xs text-gray-400 italic p-3">No posts found.</p>}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Custom Link */}
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+                        <button
+                            onClick={() => toggleSection('links')}
+                            className="w-full flex items-center justify-between p-6 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            <h3 className="text-lg font-black text-[#1e355e] flex items-center gap-2">
+                                <LinkIcon size={18} className="text-green-500" /> Custom Link
+                            </h3>
+                            {sectionsOpen.links ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        </button>
+
+                        {sectionsOpen.links && (
+                            <div className="p-6 pt-0 space-y-3 border-t border-gray-50">
+                                <input
+                                    type="text"
+                                    placeholder="Label (e.g., Google)"
+                                    id="custom-label"
+                                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-green-500/10"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="URL (e.g., https://...)"
+                                    id="custom-url"
+                                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-green-500/10"
+                                />
+                                <button
+                                    onClick={() => {
+                                        const l = (document.getElementById('custom-label') as HTMLInputElement).value;
+                                        const u = (document.getElementById('custom-url') as HTMLInputElement).value;
+                                        if (l && u) {
+                                            addItem(l, u);
+                                            (document.getElementById('custom-label') as HTMLInputElement).value = '';
+                                            (document.getElementById('custom-url') as HTMLInputElement).value = '';
+                                        }
+                                    }}
+                                    className="w-full py-2.5 bg-gray-100 text-[#1e355e] rounded-xl font-bold text-sm hover:bg-green-500 hover:text-white transition-all"
+                                >
+                                    Add to Menu
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -273,7 +431,7 @@ export default function ManageMenus() {
                         <div className="flex justify-between items-center mb-8">
                             <div>
                                 <h2 className="text-2xl font-black text-[#1e355e]">Menu Structure</h2>
-                                <p className="text-sm text-gray-400">Drag each item into the order you prefer.</p>
+                                <p className="text-sm text-gray-400">Drag items to reorder. Use arrows to nest.</p>
                             </div>
                             <button
                                 onClick={saveMenu}
@@ -299,6 +457,11 @@ export default function ManageMenus() {
                                                             ? "bg-white border-blue-200 shadow-2xl scale-[1.02] z-50"
                                                             : "bg-gray-50 border-gray-100 hover:border-gray-200"
                                                             }`}
+                                                        style={{
+                                                            ...provided.draggableProps.style,
+                                                            marginLeft: `${(item.depth || 0) * 40}px`,
+                                                            borderColor: (item.depth || 0) > 0 ? '#BFDBFE' : '' // Subtle blue border for nested
+                                                        }}
                                                     >
                                                         <div {...provided.dragHandleProps} className="p-2 cursor-grab active:cursor-grabbing">
                                                             <GripVertical className="text-gray-300" size={20} />
@@ -323,6 +486,23 @@ export default function ManageMenus() {
                                                                 />
                                                             </div>
                                                         </div>
+
+                                                        {/* Nesting Controls */}
+                                                        <div className="flex flex-col gap-1 justify-center">
+                                                            <button
+                                                                onClick={() => indentItem(index)}
+                                                                className="text-gray-300 hover:text-blue-500 p-1"
+                                                            >
+                                                                <ArrowRight size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => outdentItem(index)}
+                                                                className="text-gray-300 hover:text-blue-500 p-1"
+                                                            >
+                                                                <ArrowLeft size={16} />
+                                                            </button>
+                                                        </div>
+
                                                         <button
                                                             onClick={() => removeItem(item.id)}
                                                             className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all self-end mb-1"

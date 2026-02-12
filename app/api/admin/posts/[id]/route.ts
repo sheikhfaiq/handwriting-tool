@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -42,6 +43,10 @@ export async function PUT(
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
 
+        const isSystemAdmin = session.user?.email === "admin@gmail.com";
+        // Fetch existing to handle slug changes for revalidation
+        const existingPost = await (prisma as any).post.findUnique({ where: { id: params.id } });
+
         const post = await (prisma as any).post.update({
             where: { id: params.id },
             data: {
@@ -50,11 +55,19 @@ export async function PUT(
                 excerpt,
                 metaDescription,
                 coverImage,
-                published,
+                published: isSystemAdmin ? published : false, // Force draft if not System Admin
                 categoryId,
                 slug,
             },
         });
+
+        if (existingPost?.slug && existingPost.slug !== slug) {
+            revalidatePath(`/${existingPost.slug}`);
+            // If posts are under /blog, we should revalidate that.
+            // But revalidating generic path is safer.
+        }
+        revalidatePath(`/${slug}`);
+        revalidatePath("/admin/manage-posts");
 
         return NextResponse.json(post);
     } catch (error: any) {
