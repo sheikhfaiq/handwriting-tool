@@ -74,8 +74,8 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                 <Link
                     href={item.url || "#"}
                     className={`flex items-center justify-between gap-2 transition-colors ${depth === 0
-                            ? "text-[#e0cdb6] hover:text-white py-1" // Requested Color
-                            : "px-5 py-3 text-sm font-semibold text-gray-600 hover:text-blue-600 hover:bg-gray-50 w-full"
+                        ? "text-white hover:text-blue-200 py-1" // Requested Color
+                        : "px-5 py-3 text-sm font-semibold text-gray-600 hover:text-blue-600 hover:bg-gray-50 w-full"
                         }`}
                 >
                     <span className="flex items-center gap-2">
@@ -102,12 +102,12 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
     };
 
     return (
-        <footer className="bg-[#1e355e] text-[#e0cdb6] pt-16 pb-8 relative">
+        <footer className="bg-[#1e355e] text-white pt-16 pb-8 relative">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12 items-start">
 
                     {/* Column 1: Logo */}
-                    <div className="flex flex-col gap-4 mt-4 items-start">
+                    <div className="flex flex-col gap-4 mt-8 items-start">
                         <Link
                             href="/"
                             className="flex items-center gap-3 group"
@@ -116,7 +116,7 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                             <img
                                 src="/logo.png"
                                 alt="Handwriting Studio Logo"
-                                className="h-10 w-auto object-contain brightness-0 invert"
+                                className="h-16 md:h-20 w-auto object-contain brightness-0 invert"
                             />
                         </Link>
                     </div>
@@ -131,10 +131,10 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                     </div>
 
                     {/* Column 3: Description */}
-                    <div className="flex flex-col items-center lg:items-end text-center lg:text-right">
-                        <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm">Text to Handwriting</h4>
+                    <div className="flex flex-col items-center lg:items-center text-center lg:text-center">
+                        <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm text-center">Text to Handwriting</h4>
                         <p
-                            className="text-[#e0cdb6]/80 text-sm leading-relaxed max-w-xs text-center lg:text-right"
+                            className="text-white/80 text-sm leading-relaxed max-w-xs text-justify"
                         >
                             Text to Handwriting is a free online tool that changes typed text into real-looking Handwriting.
                             You can make custom handwritten notes,
@@ -145,7 +145,7 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
 
                 {/* Bottom Bar: Copyright (Centered) + ScrollUp (Right) */}
                 <div className="pt-8 border-t border-white/20 relative flex items-center justify-center">
-                    <p className="text-[#e0cdb6]/60 text-sm text-center">
+                    <p className="text-white/60 text-sm text-center">
                         © {new Date().getFullYear()} Text To Handwriting. All rights reserved.
                     </p>
 
