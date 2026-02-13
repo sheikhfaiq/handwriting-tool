@@ -6,6 +6,9 @@ import Preview from './Preview';
 import Pagination from './Pagination';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import DownloadModal from './DownloadModal';
 
 export interface ElementStyle {
   bold?: boolean;
@@ -52,6 +55,9 @@ export default function ConverterSection() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<string[]>(['']);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadType, setDownloadType] = useState<'image' | 'pdf'>('image');
+  const [progress, setProgress] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Pagination Logic
@@ -290,46 +296,112 @@ export default function ConverterSection() {
     if (selectedElementId === id) setSelectedElementId(null);
   };
 
-  const handleDownloadImage = async () => {
-    if (!previewRef.current) return;
-    setIsGenerating(true);
-    try {
-      const dataUrl = await toPng(previewRef.current, { quality: 0.95 });
-      const link = document.createElement('a');
-      link.download = `handwriting-page-${currentPage + 1}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error('Failed to download image', err);
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleDownloadImage = () => {
+    setDownloadType('image');
+    setDownloadModalOpen(true);
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
+    setDownloadType('pdf');
+    setDownloadModalOpen(true);
+  };
+
+  const handleDownloadConfirm = async (mode: 'single' | 'all') => {
     setIsGenerating(true);
+    setProgress(0);
+
+    // Wait for modal to close and state to update
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      if (downloadType === 'image') {
+        if (mode === 'single') {
+          setProgress(10);
+          if (!previewRef.current) return;
+          setProgress(30);
+          const dataUrl = await toPng(previewRef.current, { quality: 0.95 });
+          setProgress(70);
+          saveAs(dataUrl, `handwriting-page-${currentPage + 1}.png`);
+          setProgress(100);
+        } else {
+          // Download all pages as ZIP
+          const zip = new JSZip();
 
-      for (let i = 0; i < pages.length; i++) {
-        const pageEl = document.getElementById(`page-export-${i}`);
-        if (pageEl) {
-          const dataUrl = await toPng(pageEl, { quality: 0.95 });
-          const imgProps = pdf.getImageProperties(dataUrl);
-          const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          for (let i = 0; i < pages.length; i++) {
+            const pageEl = document.getElementById(`page-export-${i}`);
+            if (pageEl) {
+              const dataUrl = await toPng(pageEl, { quality: 0.95 });
+              // Remove data:image/png;base64, prefix
+              const base64Data = dataUrl.split(',')[1];
+              zip.file(`handwriting-page-${i + 1}.png`, base64Data, { base64: true });
 
-          if (i > 0) pdf.addPage();
-          pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
+              // Update progress based on page processing (0-50%)
+              const percent = Math.round(((i + 1) / pages.length) * 50);
+              setProgress(percent);
+              // Small delay to allow UI to update
+              await new Promise(r => setTimeout(r, 50));
+            }
+          }
+
+          // Generate zip (50-100%)
+          const content = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+            setProgress(50 + (metadata.percent / 2));
+          });
+          saveAs(content, 'handwriting-pages.zip');
+          setProgress(100);
+        }
+      } else {
+        // PDF Download
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        if (mode === 'single') {
+          setProgress(10);
+          // For single page PDF, we can use the hidden export element for the current page
+          // to ensure clean export without UI wrapper, simply accessing by index
+          const pageEl = document.getElementById(`page-export-${currentPage}`);
+          if (pageEl) {
+            setProgress(30);
+            const dataUrl = await toPng(pageEl, { quality: 0.95 });
+            setProgress(50);
+            const imgProps = pdf.getImageProperties(dataUrl);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
+            setProgress(80);
+            pdf.save(`handwriting-page-${currentPage + 1}.pdf`);
+            setProgress(100);
+          }
+        } else {
+          // All pages
+          for (let i = 0; i < pages.length; i++) {
+            const pageEl = document.getElementById(`page-export-${i}`);
+            if (pageEl) {
+              const dataUrl = await toPng(pageEl, { quality: 0.95 });
+              const imgProps = pdf.getImageProperties(dataUrl);
+              const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+              if (i > 0) pdf.addPage();
+              pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
+
+              const percent = Math.round(((i + 1) / pages.length) * 100);
+              setProgress(percent);
+              await new Promise(r => setTimeout(r, 50));
+            }
+          }
+          pdf.save('handwriting.pdf');
+          setProgress(100);
         }
       }
-
-      pdf.save('handwriting.pdf');
     } catch (err) {
-      console.error('Failed to download PDF', err);
+      console.error('Failed to download', err);
     } finally {
-      setIsGenerating(false);
+      // Small delay before closing modal to show 100%
+      setTimeout(() => {
+        setIsGenerating(false);
+        setDownloadModalOpen(false);
+        setProgress(0);
+      }, 500);
     }
   };
 
@@ -447,11 +519,21 @@ export default function ConverterSection() {
                 onUpdateElement={() => { }}
                 onDeleteElement={() => { }}
                 previewRef={null}
+                isExport={true}
               />
             </div>
           ))}
         </div>
       </div>
+
+      <DownloadModal
+        isOpen={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+        onConfirm={handleDownloadConfirm}
+        title={downloadType === 'image' ? 'Download PNG' : 'Download PDF'}
+        isGenerating={isGenerating}
+        progress={progress}
+      />
     </section>
   );
 }

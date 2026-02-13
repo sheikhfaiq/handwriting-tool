@@ -23,6 +23,7 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
   const [navTree, setNavTree] = useState<LinkItem[]>([]);
   // Track open state of mobile menu items by ID
   const [mobileMenuOpenState, setMobileMenuOpenState] = useState<Record<string, boolean>>({});
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
   // Close mobile menu on route change
@@ -30,6 +31,19 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
     setIsMenuOpen(false);
     setMobileMenuOpenState({}); // Reset mobile menu state
   }, [pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const toggleMobileSubmenu = (id: string) => {
     setMobileMenuOpenState(prev => ({
@@ -156,7 +170,7 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+    <header className={`sticky top-0 z-[100] transition-all duration-300 border-b border-gray-100 ${isScrolled ? 'bg-white shadow-sm' : 'bg-white/80 backdrop-blur-md'}`}>
       <div className="container mx-auto px-6 md:px-12 py-4 flex justify-between items-center">
         {/* Logo Section */}
         <Link href="/" className="flex items-center gap-3">

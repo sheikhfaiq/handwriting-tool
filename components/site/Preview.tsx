@@ -33,6 +33,7 @@ interface PreviewProps {
   onDownloadImage?: () => void;
   onDownloadPDF?: () => void;
   isGenerating?: boolean;
+  isExport?: boolean;
 }
 
 type StyleType = 'bold' | 'italic' | 'underline';
@@ -109,6 +110,7 @@ export default function Preview({
   onDownloadImage,
   onDownloadPDF,
   isGenerating,
+  isExport = false,
 }: PreviewProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -365,6 +367,177 @@ export default function Preview({
     }
   };
 
+  const renderPaper = () => (
+    <div
+      ref={isExport ? null : previewRef}
+      id={isExport ? undefined : "paper-preview"}
+      className={`w-full max-w-[210mm] min-h-[297mm] h-auto p-12 shadow-2xl relative overflow-hidden bg-white scale-[1] origin-top ${isExport ? '' : ''}`}
+      style={getPaperStyle()}
+    >
+      {/* Realistic Paper Texture Overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/paper.png')] mix-blend-multiply"></div>
+
+      {/* Margin Line for Ruled Paper */}
+      {paper === 'ruled' && (
+        <div className="absolute left-16 top-0 bottom-0 w-0.5 bg-red-300/50 h-full" />
+      )}
+
+      {/* Notebook Margin Line */}
+      {paper === 'notebook-margin' && (
+        <div className="absolute left-14 top-0 bottom-0 w-0.5 bg-red-400 h-full" />
+      )}
+
+      {/* SVG Border Overlays */}
+      {paper === 'floral-rose' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <svg className="absolute top-0 left-0 w-32 h-32 text-pink-500/30" viewBox="0 0 100 100">
+            <path d="M10,30 Q25,10 40,30 T70,30" fill="none" stroke="currentColor" strokeWidth="2" />
+            <circle cx="10" cy="30" r="5" fill="currentColor" />
+            <circle cx="40" cy="30" r="5" fill="currentColor" />
+            <circle cx="70" cy="30" r="5" fill="currentColor" />
+          </svg>
+          <div className="absolute inset-4 border-2 border-pink-100 rounded-3xl" />
+          <div className="absolute top-4 right-4 text-4xl">🌹</div>
+          <div className="absolute bottom-4 left-4 text-4xl">🌹</div>
+        </div>
+      )}
+
+      {paper === 'floral-lavender' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-6 border-[12px] border-purple-100/30 rounded-lg" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 text-3xl">🪻🪻🪻</div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-3xl">🪻🪻🪻</div>
+        </div>
+      )}
+
+      {paper === 'floral-tropical' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 p-8 text-6xl opacity-20">🌿</div>
+          <div className="absolute bottom-0 left-0 p-8 text-6xl opacity-20">🍃</div>
+          <div className="absolute top-1/2 left-0 -translate-y-1/2 p-4 text-4xl opacity-10">🌴</div>
+        </div>
+      )}
+
+      {paper === 'heart-border' && (
+        <div className="absolute inset-0 pointer-events-none border-[20px] border-red-50/50">
+          <div className="absolute top-2 left-2 text-2xl">❤️</div>
+          <div className="absolute top-2 right-2 text-2xl">❤️</div>
+          <div className="absolute bottom-2 left-2 text-2xl">❤️</div>
+          <div className="absolute bottom-2 right-2 text-2xl">❤️</div>
+        </div>
+      )}
+
+      {paper === 'classic-scroll' && (
+        <div className="absolute inset-0 pointer-events-none border-[40px] border-transparent" style={{ borderImage: 'url("https://www.transparenttextures.com/patterns/black-paper.png") 30 stretch' }}>
+          <div className="absolute inset-0 border-[2px] border-amber-900/20 m-4" />
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
+        </div>
+      )}
+
+      {/* Wishlist Designs */}
+      {paper === 'wishlist-1' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 border-[24px] border-sky-100/50" />
+          <div className="absolute bottom-4 left-4 text-8xl">🍄</div>
+          <div className="absolute top-0 right-0 p-8 text-4xl">🍃</div>
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-bold text-sky-800 tracking-widest uppercase">Wishlist</div>
+        </div>
+      )}
+
+      {paper === 'wishlist-2' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 border-[20px] border-orange-50" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end gap-2 pb-4">
+            <span className="text-7xl">🎁</span>
+            <span className="text-6xl pb-2">🌺</span>
+          </div>
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-serif italic text-orange-800">Wish List</div>
+        </div>
+      )}
+
+      {paper === 'wishlist-3' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 h-24 flex justify-around items-center px-8">
+            <span className="text-3xl">🎄</span>
+            <span className="text-4xl italic font-serif text-red-800">Wish List</span>
+            <span className="text-3xl">🎅</span>
+          </div>
+          <div className="absolute inset-x-0 top-24 bottom-0 border-x-[30px] border-b-[30px] border-emerald-50/30">
+            <div className="absolute -top-4 left-0 text-2xl">🔔</div>
+            <div className="absolute -top-4 right-0 text-2xl">🍭</div>
+          </div>
+        </div>
+      )}
+
+      {paper === 'wishlist-4' && (
+        <div className="absolute inset-0 pointer-events-none border-[30px] border-orange-400">
+          <div className="absolute inset-0 border-[4px] border-white m-1" />
+          <div className="absolute top-4 left-4 text-white font-black text-xs uppercase tracking-tighter">My Wishlist</div>
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-8 translate-y-4">
+            <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👑</div>
+            <div className="w-24 h-24 bg-orange-100 rounded-full border-4 border-white flex items-center justify-center text-5xl shadow-lg">🤴</div>
+            <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👳</div>
+          </div>
+        </div>
+      )}
+
+      {paper === 'wishlist-5' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 bg-red-50/50 p-12 text-center">
+            <span className="text-5xl block mb-2">🌺 🍃 🌺</span>
+            <span className="text-4xl font-serif italic text-red-900">Wish List</span>
+          </div>
+          <div className="absolute bottom-4 right-4 text-6xl opacity-20">🌿</div>
+        </div>
+      )}
+
+      {paper === 'border-2' && (
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Corner Triangles */}
+          <div className="absolute top-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#fb923c22' }} />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 100% 0)', backgroundColor: '#fb923c22' }} />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
+          <div className="absolute bottom-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
+
+          {/* Accents */}
+          <div className="absolute top-8 left-8 w-16 h-16 border-t-4 border-l-4 border-orange-400" />
+          <div className="absolute bottom-8 right-8 w-16 h-16 border-b-4 border-r-4 border-orange-400" />
+        </div>
+      )}
+
+      <div className="whitespace-pre-wrap wrap-break-word relative z-10">
+        {renderedText}
+      </div>
+
+      {/* Canvas Elements */}
+      {elements.map((element) => (
+        <CanvasElement
+          key={element.id}
+          element={element}
+          isSelected={selectedElementId === element.id}
+          onSelect={onSelectElement}
+          onUpdate={onUpdateElement}
+          onDelete={onDeleteElement}
+          font={font}
+        />
+      ))}
+
+      {selectedElementId && elements.find(el => el.id === selectedElementId) && (
+        <ElementFormatToolbar
+          element={elements.find(el => el.id === selectedElementId)!}
+          onUpdate={onUpdateElement}
+          onDelete={onDeleteElement}
+          onClose={() => onSelectElement(null)}
+        />
+      )}
+    </div>
+  );
+
+  if (isExport) {
+    return renderPaper();
+  }
+
   return (
     <div className="bg-[#F8F9FA] rounded-3xl overflow-hidden shadow-xl border border-gray-200">
       {/* Header */}
@@ -399,170 +572,7 @@ export default function Preview({
 
       {/* Preview Area */}
       <div className="p-8 flex justify-center bg-[#F8F9FA]">
-        <div
-          ref={previewRef}
-          id="paper-preview"
-          className="w-full max-w-[210mm] min-h-[297mm] h-auto p-12 shadow-2xl relative overflow-hidden bg-white scale-[1] origin-top"
-          style={getPaperStyle()}
-        >
-          {/* Realistic Paper Texture Overlay */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/paper.png')] mix-blend-multiply"></div>
-
-          {/* Margin Line for Ruled Paper */}
-          {paper === 'ruled' && (
-            <div className="absolute left-16 top-0 bottom-0 w-0.5 bg-red-300/50 h-full" />
-          )}
-
-          {/* Notebook Margin Line */}
-          {paper === 'notebook-margin' && (
-            <div className="absolute left-14 top-0 bottom-0 w-0.5 bg-red-400 h-full" />
-          )}
-
-          {/* SVG Border Overlays */}
-          {paper === 'floral-rose' && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <svg className="absolute top-0 left-0 w-32 h-32 text-pink-500/30" viewBox="0 0 100 100">
-                <path d="M10,30 Q25,10 40,30 T70,30" fill="none" stroke="currentColor" strokeWidth="2" />
-                <circle cx="10" cy="30" r="5" fill="currentColor" />
-                <circle cx="40" cy="30" r="5" fill="currentColor" />
-                <circle cx="70" cy="30" r="5" fill="currentColor" />
-              </svg>
-              <div className="absolute inset-4 border-2 border-pink-100 rounded-3xl" />
-              <div className="absolute top-4 right-4 text-4xl">🌹</div>
-              <div className="absolute bottom-4 left-4 text-4xl">🌹</div>
-            </div>
-          )}
-
-          {paper === 'floral-lavender' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-6 border-[12px] border-purple-100/30 rounded-lg" />
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 text-3xl">🪻🪻🪻</div>
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-3xl">🪻🪻🪻</div>
-            </div>
-          )}
-
-          {paper === 'floral-tropical' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 right-0 p-8 text-6xl opacity-20">🌿</div>
-              <div className="absolute bottom-0 left-0 p-8 text-6xl opacity-20">🍃</div>
-              <div className="absolute top-1/2 left-0 -translate-y-1/2 p-4 text-4xl opacity-10">🌴</div>
-            </div>
-          )}
-
-          {paper === 'heart-border' && (
-            <div className="absolute inset-0 pointer-events-none border-[20px] border-red-50/50">
-              <div className="absolute top-2 left-2 text-2xl">❤️</div>
-              <div className="absolute top-2 right-2 text-2xl">❤️</div>
-              <div className="absolute bottom-2 left-2 text-2xl">❤️</div>
-              <div className="absolute bottom-2 right-2 text-2xl">❤️</div>
-            </div>
-          )}
-
-          {paper === 'classic-scroll' && (
-            <div className="absolute inset-0 pointer-events-none border-[40px] border-transparent" style={{ borderImage: 'url("https://www.transparenttextures.com/patterns/black-paper.png") 30 stretch' }}>
-              <div className="absolute inset-0 border-[2px] border-amber-900/20 m-4" />
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 h-1 bg-amber-900/20" />
-            </div>
-          )}
-
-          {/* Wishlist Designs */}
-          {paper === 'wishlist-1' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 border-[24px] border-sky-100/50" />
-              <div className="absolute bottom-4 left-4 text-8xl">🍄</div>
-              <div className="absolute top-0 right-0 p-8 text-4xl">🍃</div>
-              <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-bold text-sky-800 tracking-widest uppercase">Wishlist</div>
-            </div>
-          )}
-
-          {paper === 'wishlist-2' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 border-[20px] border-orange-50" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end gap-2 pb-4">
-                <span className="text-7xl">🎁</span>
-                <span className="text-6xl pb-2">🌺</span>
-              </div>
-              <div className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl font-serif italic text-orange-800">Wish List</div>
-            </div>
-          )}
-
-          {paper === 'wishlist-3' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 left-0 right-0 h-24 flex justify-around items-center px-8">
-                <span className="text-3xl">🎄</span>
-                <span className="text-4xl italic font-serif text-red-800">Wish List</span>
-                <span className="text-3xl">🎅</span>
-              </div>
-              <div className="absolute inset-x-0 top-24 bottom-0 border-x-[30px] border-b-[30px] border-emerald-50/30">
-                <div className="absolute -top-4 left-0 text-2xl">🔔</div>
-                <div className="absolute -top-4 right-0 text-2xl">🍭</div>
-              </div>
-            </div>
-          )}
-
-          {paper === 'wishlist-4' && (
-            <div className="absolute inset-0 pointer-events-none border-[30px] border-orange-400">
-              <div className="absolute inset-0 border-[4px] border-white m-1" />
-              <div className="absolute top-4 left-4 text-white font-black text-xs uppercase tracking-tighter">My Wishlist</div>
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-8 translate-y-4">
-                <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👑</div>
-                <div className="w-24 h-24 bg-orange-100 rounded-full border-4 border-white flex items-center justify-center text-5xl shadow-lg">🤴</div>
-                <div className="w-20 h-20 bg-amber-100 rounded-full border-4 border-white flex items-center justify-center text-4xl shadow-lg">👳</div>
-              </div>
-            </div>
-          )}
-
-          {paper === 'wishlist-5' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 left-0 right-0 bg-red-50/50 p-12 text-center">
-                <span className="text-5xl block mb-2">🌺 🍃 🌺</span>
-                <span className="text-4xl font-serif italic text-red-900">Wish List</span>
-              </div>
-              <div className="absolute bottom-4 right-4 text-6xl opacity-20">🌿</div>
-            </div>
-          )}
-
-          {paper === 'border-2' && (
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Corner Triangles */}
-              <div className="absolute top-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#fb923c22' }} />
-              <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 100% 0)', backgroundColor: '#fb923c22' }} />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-coral-500/10" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)', backgroundColor: '#fb923c22' }} />
-
-              {/* Accents */}
-              <div className="absolute top-8 left-8 w-16 h-16 border-t-4 border-l-4 border-orange-400" />
-              <div className="absolute bottom-8 right-8 w-16 h-16 border-b-4 border-r-4 border-orange-400" />
-            </div>
-          )}
-
-          <div className="whitespace-pre-wrap wrap-break-word relative z-10">
-            {renderedText}
-          </div>
-
-          {/* Canvas Elements */}
-          {elements.map((element) => (
-            <CanvasElement
-              key={element.id}
-              element={element}
-              isSelected={selectedElementId === element.id}
-              onSelect={onSelectElement}
-              onUpdate={onUpdateElement}
-              onDelete={onDeleteElement}
-              font={font}
-            />
-          ))}
-
-          {selectedElementId && elements.find(el => el.id === selectedElementId) && (
-            <ElementFormatToolbar
-              element={elements.find(el => el.id === selectedElementId)!}
-              onUpdate={onUpdateElement}
-              onDelete={onDeleteElement}
-              onClose={() => onSelectElement(null)}
-            />
-          )}
-        </div>
+        {renderPaper()}
       </div>
     </div>
   );
