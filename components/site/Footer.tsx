@@ -22,48 +22,15 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
     const [navTree, setNavTree] = useState<LinkItem[]>([]);
 
     useEffect(() => {
-        const buildTree = (items: any[]) => {
-            if (!items || items.length === 0) return [];
-
-            const map = new Map<string, LinkItem>();
-            const roots: LinkItem[] = [];
-
-            // Initialize map with safe cloning
-            items.forEach(item => {
-                map.set(item.id, { ...item, children: [] });
-            });
-
-            // Build hierarchy
-            items.forEach(item => {
-                const node = map.get(item.id);
-                if (item.parentId && map.has(item.parentId)) {
-                    map.get(item.parentId)!.children!.push(node!);
-                } else {
-                    roots.push(node!);
-                }
-            });
-
-            // Sort by order
-            const sortItems = (nodes: LinkItem[]) => {
-                nodes.sort((a, b) => a.order - b.order);
-                nodes.forEach(n => {
-                    if (n.children && n.children.length > 0) {
-                        sortItems(n.children);
-                    }
-                });
-            };
-
-            sortItems(roots);
-            return roots;
-        };
-
-        // Combine both lists if needed, or just use navItems for the main navigation column
-        // The user image shows one main list. We will treat initialNavItems as that list.
-        // If there are help items, we append them or ignore based on "Menu Are Dynamically Set By User"
-        // Let's assume all dynamic items go into the center column? 
-        // Or sticky to the previous logic: Nav Items = Center Column. 
-        setNavTree(buildTree(initialNavItems));
-    }, [initialNavItems]);
+        // Enforce specific links to match Local environment and ignore dynamic DB items which are incorrect in Live
+        const defaultItems: LinkItem[] = [
+            { id: 'home', label: 'Home', url: '/', order: 1 },
+            { id: 'about', label: 'About Us', url: '/about-us', order: 2 },
+            { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', order: 3 },
+            { id: 'terms', label: 'Terms and Conditions', url: '/terms-and-conditions', order: 4 },
+        ];
+        setNavTree(defaultItems);
+    }, []);
 
     // Recursive render for footer links with Hover Dropdown behavior
     const renderFooterItem = (item: LinkItem, depth = 0) => {
@@ -107,7 +74,7 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12 items-start">
 
                     {/* Column 1: Logo */}
-                    <div className="flex flex-col gap-4 mt-8 items-start">
+                    <div className="flex flex-col gap-4 self-center items-start">
                         <Link
                             href="/"
                             className="flex items-center gap-3 group"
@@ -121,10 +88,10 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                         </Link>
                     </div>
 
-                    {/* Column 2: Navigation (Centered aligned in desktop, but text-left) */}
+                    {/* Column 2: Navigation (Centered aligned in desktop) */}
                     <div className="flex flex-col lg:items-center">
                         <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm">Navigation</h4>
-                        <ul className="space-y-3 flex flex-col items-start">
+                        <ul className="space-y-3 flex flex-col items-center">
                             {/* If no items, show nothing or placeholder? User said "Menu Are Dynamically Set". */}
                             {navTree.map(item => renderFooterItem(item))}
                         </ul>

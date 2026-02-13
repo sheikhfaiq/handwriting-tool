@@ -170,7 +170,7 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
   };
 
   return (
-    <header className={`sticky top-0 z-[100] transition-all duration-300 border-b border-gray-100 ${isScrolled ? 'bg-white shadow-sm' : 'bg-white/80 backdrop-blur-md'}`}>
+    <header className={`relative z-[100] transition-all duration-300 border-b border-gray-100 ${isScrolled ? 'bg-white shadow-sm' : 'bg-white/80 backdrop-blur-md'}`}>
       <div className="container mx-auto px-6 md:px-12 py-4 flex justify-between items-center">
         {/* Logo Section */}
         <Link href="/" className="flex items-center gap-3">
