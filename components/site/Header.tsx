@@ -98,13 +98,19 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
   const renderMobileItem = (item: LinkItem, depth = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isOpen = mobileMenuOpenState[item.id] || false;
+    const isMainLevel = depth === 0;
 
     return (
-      <div key={item.id} className="flex flex-col">
-        <div className="flex justify-between items-center group">
+      <div key={item.id} className="flex flex-col border-b border-gray-50 last:border-0">
+        <div className="flex justify-between items-center group py-0.5">
           <Link
             href={item.url || "#"}
-            className="text-lg font-bold text-[#1e355e] hover:text-blue-600 py-2 transition-colors flex-1"
+            className={`
+              flex-1 transition-colors duration-200
+              ${isMainLevel ? 'text-base font-semibold text-[#1e355e]' : 'text-sm font-medium text-gray-600'}
+              hover:text-blue-600
+              py-2.5
+            `}
             style={{ paddingLeft: depth > 0 ? `${depth * 16}px` : '0' }}
             onClick={() => {
               if (!hasChildren) setIsMenuOpen(false);
@@ -115,16 +121,26 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
           {hasChildren && (
             <button
               onClick={() => toggleMobileSubmenu(item.id)}
-              className="p-2 text-gray-400 hover:text-blue-600 transition-transform"
+              className={`
+                p-2 rounded-lg hover:bg-gray-50 transition-all duration-200
+                ${isOpen ? 'text-blue-600 bg-blue-50/50' : 'text-gray-400'}
+              `}
             >
-              <ChevronDown size={20} className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={16} className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
           )}
         </div>
 
-        {hasChildren && isOpen && (
-          <div className="flex flex-col space-y-2 border-l-2 border-gray-100 ml-4 pl-0">
-            {item.children!.map((child) => renderMobileItem(child, depth + 1))}
+        {hasChildren && (
+          <div
+            className={`
+              overflow-hidden transition-all duration-300 ease-in-out
+              ${isOpen ? 'max-h-[500px] opacity-100 mb-2' : 'max-h-0 opacity-0'}
+            `}
+          >
+            <div className="flex flex-col space-y-0.5">
+              {item.children!.map((child) => renderMobileItem(child, depth + 1))}
+            </div>
           </div>
         )}
       </div>
@@ -205,23 +221,54 @@ export default function Header({ initialNavItems = [] }: HeaderProps) {
 
       {/* Mobile Navigation Overlay */}
       <div
-        className={`lg:hidden fixed inset-0 bg-white/95 backdrop-blur-xl z-[90] transition-all duration-300 ${isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}`}
-        style={{ top: '73px' }} // Approx header height
+        className={`lg:hidden fixed inset-0 z-[110] transition-all duration-300 ease-in-out ${isMenuOpen ? "visible" : "invisible pointer-events-none"
+          }`}
+        style={{ top: '0', position: 'fixed', height: '100vh', width: '100vw' }}
       >
-        <div className="container mx-auto px-6 py-8 h-[calc(100vh-73px)] overflow-y-auto">
-          <nav className="space-y-4">
-            {navTree.map((item) => renderMobileItem(item))}
+        {/* Backdrop for closing */}
+        <div
+          className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${isMenuOpen ? "opacity-100" : "opacity-0"
+            }`}
+          onClick={() => setIsMenuOpen(false)}
+        />
 
-            <div className="pt-6 border-t border-gray-100 mt-6">
-              <Link
-                href="/#convert"
-                className="w-full block text-center bg-[#1e355e] text-white px-6 py-4 rounded-2xl font-black text-lg shadow-xl shadow-blue-900/20 active:scale-95 transition-all"
+        {/* Menu Content Drawer */}
+        <div
+          className={`absolute top-0 right-0 w-[80%] sm:w-[320px] h-full bg-white shadow-2xl transition-transform duration-300 ease-out transform ${isMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          style={{ backgroundColor: '#ffffff', zIndex: 120 }}
+        >
+          <div className="flex flex-col h-full bg-white">
+            {/* Header of Menu */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+              <span className="text-lg font-bold text-[#1e355e] tracking-tight">Menu</span>
+              <button
+                className="p-1.5 -mr-2 text-gray-400 hover:text-[#1e355e] hover:bg-gray-100 rounded-lg transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Start Writing Now
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 bg-white">
+              <nav className="flex flex-col space-y-1">
+                {navTree.map((item) => renderMobileItem(item))}
+              </nav>
+            </div>
+
+            {/* Footer / CTA */}
+            <div className="p-5 border-t border-gray-100 bg-gray-50/80">
+              <Link
+                href="/#convert"
+                className="w-full flex items-center justify-center gap-2 bg-[#1e355e] text-white px-5 py-3 rounded-lg font-semibold text-base shadow-md shadow-blue-900/10 hover:bg-blue-600 active:scale-[0.98] transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Start Writing
+                <ChevronRight size={18} />
               </Link>
             </div>
-          </nav>
+          </div>
         </div>
       </div>
     </header>
