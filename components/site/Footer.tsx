@@ -20,6 +20,16 @@ export interface FooterProps {
 
 const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) => {
     const [navTree, setNavTree] = useState<LinkItem[]>([]);
+    const [showScroll, setShowScroll] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScroll(window.scrollY > 300);
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     useEffect(() => {
         // Enforce specific links to match Local environment and ignore dynamic DB items which are incorrect in Live
@@ -70,7 +80,7 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
 
     return (
         <footer className="bg-[#1e355e] text-white pt-16 pb-8 relative">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="max-w-7xl mx-auto px-100 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12 items-start">
 
                     {/* Column 1: Logo */}
@@ -116,15 +126,19 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                         © {new Date().getFullYear()} Text To Handwriting. All rights reserved.
                     </p>
 
-                    <button
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className="absolute right-0 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-transform hover:scale-110 shadow-lg"
-                        aria-label="Scroll to top"
-                    >
-                        <ArrowUp size={20} />
-                    </button>
+
                 </div>
             </div>
+            {showScroll && (
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="fixed bottom-6 right-6 z-50 p-4 bg-[#1f365f] hover:bg-blue-700 border border-white/30 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110"
+                    aria-label="Scroll to top"
+                >
+                    <ArrowUp size={22} />
+                </button>
+            )}
+
         </footer>
     );
 };
