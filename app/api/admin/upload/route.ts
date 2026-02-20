@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, resolve } from 'path';
+import { existsSync } from 'fs';
 
 export async function POST(req: Request) {
     try {
@@ -16,13 +17,32 @@ export async function POST(req: Request) {
 
         // Standardize filename
         const filename = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-        const path = join(process.cwd(), 'public', 'uploads', filename);
+        const root = process.cwd();
+        const uploadDir = resolve(root, 'public', 'uploads');
 
+        console.log("Upload Debug:", {
+            root,
+            uploadDir,
+            filename,
+            exists: existsSync(uploadDir)
+        });
+
+        // Ensure directory exists
+        if (!existsSync(uploadDir)) {
+            console.log("Creating directory:", uploadDir);
+            await mkdir(uploadDir, { recursive: true });
+        }
+
+        const path = join(uploadDir, filename);
+        console.log("Writing file to:", path);
         await writeFile(path, buffer);
 
-        return NextResponse.json({ url: `/uploads/${filename}` });
+        // Return the absolute path from root
+        const url = `/uploads/${filename}`;
+        console.log("Returning URL:", url);
+        return NextResponse.json({ url });
     } catch (error) {
-        console.error("Upload error:", error);
-        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+        console.error("Upload error detail:", error);
+        return NextResponse.json({ error: "Upload failed: " + (error as Error).message }, { status: 500 });
     }
 }
