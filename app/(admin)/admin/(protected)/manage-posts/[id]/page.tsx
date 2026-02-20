@@ -85,13 +85,19 @@ export default function PostForm() {
                 method: "POST",
                 body: formData,
             });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Upload failed");
+            }
+
             const data = await res.json();
             if (data.url) {
                 setCoverImage(data.url);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload failed:", error);
-            alert("Upload failed. Please try again.");
+            alert(error.message || "Upload failed. Please try again.");
         } finally {
             setUploading(false);
         }
@@ -326,8 +332,8 @@ export default function PostForm() {
                                 onClick={() => handleSave(true)}
                                 disabled={saving}
                                 className={`px-6 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 font-semibold shadow-sm ${published
-                                        ? "bg-green-600 text-white hover:bg-green-700"
-                                        : "bg-blue-600 text-white hover:bg-blue-700"
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
                                     }`}
                             >
                                 <Eye size={20} />
