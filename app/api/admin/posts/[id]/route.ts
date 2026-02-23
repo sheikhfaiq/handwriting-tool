@@ -39,6 +39,10 @@ export async function PUT(
     try {
         const params = await props.params;
         const { title, content, excerpt, metaDescription, coverImage, published, categoryId, slug: userSlug } = await req.json();
+
+        // Handle empty categoryId as null to avoid foreign key constraint error P2003
+        const targetCategoryId = categoryId || null;
+
         const slug = userSlug
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
@@ -56,7 +60,7 @@ export async function PUT(
                 metaDescription,
                 coverImage,
                 published: isSystemAdmin ? published : false, // Force draft if not System Admin
-                categoryId,
+                categoryId: targetCategoryId,
                 slug,
             },
         });

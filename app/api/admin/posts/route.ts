@@ -33,6 +33,9 @@ export async function POST(req: Request) {
         const isSystemAdmin = session.user?.email === "admin@gmail.com";
         const publishedState = isSystemAdmin ? (published || false) : false;
 
+        // Handle empty categoryId as null to avoid foreign key constraint error P2003
+        const targetCategoryId = categoryId || null;
+
         const post = await (prisma as any).post.create({
             data: {
                 title,
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
                 metaDescription,
                 coverImage,
                 published: publishedState,
-                categoryId,
+                categoryId: targetCategoryId,
                 slug,
             },
         });

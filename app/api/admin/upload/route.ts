@@ -37,8 +37,8 @@ export async function POST(req: Request) {
         console.log("Writing file to:", path);
         await writeFile(path, buffer);
 
-        // Return the absolute path from root
-        const url = `/uploads/${filename}`;
+        // Return the API route path for better reliability in production
+        const url = `/api/uploads/${filename}`;
         console.log("Returning URL:", url);
         return NextResponse.json({ url });
     } catch (error) {
