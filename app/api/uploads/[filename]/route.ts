@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { existsSync } from 'fs';
 
 export async function GET(
@@ -10,35 +10,17 @@ export async function GET(
     try {
         const { filename } = await params;
         const root = process.cwd();
+        const uploadDir = join(root, 'public', 'uploads');
+        const filePath = join(uploadDir, filename);
 
-        // Try multiple potential upload directories
-        const potentialDirs = [
-            join(root, 'public', 'uploads'),
-            join(root, 'uploads'),
-            join(resolve(root, '..'), 'public', 'uploads') // In case we are in .next/server
-        ];
-
-        let filePath = "";
-        let found = false;
-
-        for (const dir of potentialDirs) {
-            const p = join(dir, filename);
-            if (existsSync(p)) {
-                filePath = p;
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            console.error(`Image not found: ${filename}. Checked:`, potentialDirs);
+        if (!existsSync(filePath)) {
+            console.error(`Image not found: ${filename} at ${filePath}`);
             return NextResponse.json({
                 error: "File not found",
                 filename,
                 diagnostics: {
-                    root,
-                    checkedDirs: potentialDirs,
-                    exists: potentialDirs.map(d => ({ dir: d, exists: existsSync(d) }))
+                    cwd: root,
+                    checkedPath: filePath
                 }
             }, { status: 404 });
         }
@@ -55,7 +37,7 @@ export async function GET(
         else if (ext === 'webp') contentType = 'image/webp';
         else if (ext === 'svg') contentType = 'image/svg+xml';
 
-        return new NextResponse(fileBuffer, {
+        return new Response(fileBuffer, {
             headers: {
                 'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=31536000, immutable',
@@ -63,6 +45,9 @@ export async function GET(
         });
     } catch (error) {
         console.error("Error serving file:", error);
-        return NextResponse.json({ error: "Internal Server Error", details: (error as Error).message }, { status: 500 });
+        return NextResponse.json({
+            error: "Internal Server Error",
+            message: (error as Error).message
+        }, { status: 500 });
     }
 }
