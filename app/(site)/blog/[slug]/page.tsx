@@ -77,7 +77,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     <img
                         src={post.coverImage}
                         alt={post.title}
-                        className="w-full h-[400px] object-cover rounded-2xl mb-8 shadow-lg"
+                        className="w-full h-auto rounded-2xl mb-8 shadow-lg"
                     />
                 )}
                 <header className="mb-8">

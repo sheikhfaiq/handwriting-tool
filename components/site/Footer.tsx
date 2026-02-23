@@ -80,14 +80,14 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
 
     return (
         <footer className="bg-[#1e355e] text-white pt-16 pb-8 relative">
-            <div className="max-w-7xl mx-auto px-100 sm:px-6 lg:px-8 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12 items-start">
 
                     {/* Column 1: Logo */}
-                    <div className="flex flex-col gap-4 self-center items-start">
+                    <div className="flex flex-col gap-4 self-center items-left">
                         <Link
                             href="/"
-                            className="flex items-center gap-3 group"
+                            className="flex items-start gap-3 group"
                             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                         >
                             <img
@@ -99,19 +99,19 @@ const Footer = ({ initialNavItems = [], initialHelpItems = [] }: FooterProps) =>
                     </div>
 
                     {/* Column 2: Navigation (Centered aligned in desktop) */}
-                    <div className="flex flex-col lg:items-center">
+                    <div className="flex flex-col items-start lg:pl-12">
                         <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm">Navigation</h4>
-                        <ul className="space-y-3 flex flex-col items-center">
+                        <ul className="space-y-3 flex flex-col items-start">
                             {/* If no items, show nothing or placeholder? User said "Menu Are Dynamically Set". */}
                             {navTree.map(item => renderFooterItem(item))}
                         </ul>
                     </div>
 
                     {/* Column 3: Description */}
-                    <div className="flex flex-col items-center lg:items-center text-center lg:text-center">
-                        <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm text-center">Text to Handwriting</h4>
+                    <div className="flex flex-col items-start text-left">
+                        <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm">Text to Handwriting</h4>
                         <p
-                            className="text-white/80 text-sm leading-relaxed max-w-xs text-justify"
+                            className="text-white/80 text-sm leading-relaxed max-w-xs text-left"
                         >
                             Text to Handwriting is a free online tool that changes typed text into real-looking Handwriting.
                             You can make custom handwritten notes,
