@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 
 export async function GET(
@@ -9,19 +9,46 @@ export async function GET(
 ) {
     try {
         const { filename } = await params;
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        const filePath = join(uploadDir, filename);
+        const root = process.cwd();
 
-        if (!existsSync(filePath)) {
-            return new NextResponse("File not found", { status: 404 });
+        // Try multiple potential upload directories
+        const potentialDirs = [
+            join(root, 'public', 'uploads'),
+            join(root, 'uploads'),
+            join(resolve(root, '..'), 'public', 'uploads') // In case we are in .next/server
+        ];
+
+        let filePath = "";
+        let found = false;
+
+        for (const dir of potentialDirs) {
+            const p = join(dir, filename);
+            if (existsSync(p)) {
+                filePath = p;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            console.error(`Image not found: ${filename}. Checked:`, potentialDirs);
+            return NextResponse.json({
+                error: "File not found",
+                filename,
+                diagnostics: {
+                    root,
+                    checkedDirs: potentialDirs,
+                    exists: potentialDirs.map(d => ({ dir: d, exists: existsSync(d) }))
+                }
+            }, { status: 404 });
         }
 
         const fileBuffer = await readFile(filePath);
-        
+
         // Determine content type based on extension
         const ext = filename.split('.').pop()?.toLowerCase();
         let contentType = 'application/octet-stream';
-        
+
         if (ext === 'jpg' || ext === 'jpeg') contentType = 'image/jpeg';
         else if (ext === 'png') contentType = 'image/png';
         else if (ext === 'gif') contentType = 'image/gif';
@@ -36,6 +63,6 @@ export async function GET(
         });
     } catch (error) {
         console.error("Error serving file:", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error", details: (error as Error).message }, { status: 500 });
     }
 }

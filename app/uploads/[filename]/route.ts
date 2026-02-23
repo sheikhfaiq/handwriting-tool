@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 
 export async function GET(
@@ -9,14 +9,37 @@ export async function GET(
 ) {
     try {
         const { filename } = await params;
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        const filePath = join(uploadDir, filename);
+        const root = process.cwd();
 
-        if (!existsSync(filePath)) {
-            // Fallback: If the file exists but the static server hasn't picked it up,
-            // this API route will still be able to read it from disk.
-            // If it REALLY doesn't exist, we 404.
-            return new NextResponse("File not found on disk", { status: 404 });
+        // Try multiple potential upload directories
+        const potentialDirs = [
+            join(root, 'public', 'uploads'),
+            join(root, 'uploads'),
+            join(resolve(root, '..'), 'public', 'uploads')
+        ];
+
+        let filePath = "";
+        let found = false;
+
+        for (const dir of potentialDirs) {
+            const p = join(dir, filename);
+            if (existsSync(p)) {
+                filePath = p;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            return NextResponse.json({
+                error: "File not found on disk (legacy route)",
+                filename,
+                diagnostics: {
+                    root,
+                    checkedDirs: potentialDirs,
+                    exists: potentialDirs.map(d => ({ dir: d, exists: existsSync(d) }))
+                }
+            }, { status: 404 });
         }
 
         const fileBuffer = await readFile(filePath);
@@ -39,6 +62,6 @@ export async function GET(
         });
     } catch (error) {
         console.error("Error serving file via legacy route:", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error", details: (error as Error).message }, { status: 500 });
     }
 }
