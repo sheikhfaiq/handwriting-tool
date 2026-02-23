@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 
 const prismaAny = prisma as any;
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import slugify from "slugify";
 
 export async function GET() {

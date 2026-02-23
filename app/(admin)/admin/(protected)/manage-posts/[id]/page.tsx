@@ -56,6 +56,20 @@ export default function PostForm() {
     const fetchPost = async () => {
         try {
             const res = await fetch(`/api/admin/posts/${id}`, { cache: "no-store" });
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.error("Fetch post failed with status:", res.status, "body:", text);
+                return;
+            }
+
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await res.text();
+                console.error("Expected JSON but received:", contentType, "body:", text);
+                return;
+            }
+
             const data = await res.json();
             setTitle(data.title);
             setSlug(data.slug || "");
@@ -126,10 +140,18 @@ export default function PostForm() {
             });
 
             if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || "Failed to save post");
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || `Failed to save post (${res.status})`);
+                } else {
+                    const errorText = await res.text();
+                    console.error("Server returned non-JSON error:", errorText);
+                    throw new Error(`Server error (${res.status}). See console for details.`);
+                }
             }
 
+            const data = await res.json();
             // Update local state
             setPublished(targetPublishedState);
 
