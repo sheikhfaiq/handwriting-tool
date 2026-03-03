@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import FAQSection from "@/components/site/FAQSection";
 
 export const dynamic = 'force-dynamic';
 
@@ -74,11 +75,13 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
         <div className="bg-[#fdfbf7] min-h-screen overflow-x-hidden">
             <article className="max-w-5xl mx-auto py-12 px-4">
                 {post.coverImage && (
-                    <img
-                        src={post.coverImage}
-                        alt={post.title}
-                        className="w-full h-auto rounded-2xl mb-8 shadow-lg"
-                    />
+                    <div className="mb-8 flex justify-center">
+                        <img
+                            src={post.coverImage}
+                            alt={post.title}
+                            className="max-h-[350px] w-auto rounded-xl shadow-md object-contain"
+                        />
+                    </div>
                 )}
                 <header className="mb-8">
                     {post.category && (
@@ -109,6 +112,12 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         dangerouslySetInnerHTML={{ __html: cleanContent(post.content) }}
                     />
                 </div>
+
+                {post.faq && Array.isArray(post.faq) && post.faq.length > 0 && (
+                    <div className="mt-16">
+                        <FAQSection faqs={post.faq as any} />
+                    </div>
+                )}
 
                 <div className="mt-12 pt-8 border-t border-slate-200">
                     <a href="/blog" className="text-blue-600 font-semibold hover:underline flex items-center gap-2">

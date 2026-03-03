@@ -51,6 +51,7 @@ model Post {
   category        Category? @relation(fields: [categoryId], references: [id])
   categoryId      String?
   published       Boolean   @default(false)
+  faq             Json?     @default("[]")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

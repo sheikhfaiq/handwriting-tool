@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Editor from "@/components/admin/Editor";
-import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2, Eye } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2, Eye, Plus, Trash2, HelpCircle } from "lucide-react";
 import { getSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -22,6 +22,7 @@ export default function PostForm() {
     const [metaDescription, setMetaDescription] = useState("");
     const [coverImage, setCoverImage] = useState("");
     const [published, setPublished] = useState(false);
+    const [faqs, setFaqs] = useState<{ question: string, answer: string }[]>([]);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -79,6 +80,7 @@ export default function PostForm() {
             setMetaDescription(data.metaDescription || "");
             setCoverImage(data.coverImage || "");
             setPublished(data.published);
+            setFaqs(Array.isArray(data.faq) ? data.faq : []);
         } catch (error) {
             console.error("Error fetching post:", error);
         } finally {
@@ -135,7 +137,8 @@ export default function PostForm() {
                     excerpt,
                     metaDescription,
                     coverImage,
-                    published: targetPublishedState
+                    published: targetPublishedState,
+                    faq: faqs
                 }),
             });
 
@@ -322,6 +325,69 @@ export default function PostForm() {
                     ) : (
                         <Editor value={content} onChange={setContent} key={id} />
                     )}
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <HelpCircle size={20} className="text-blue-600" />
+                            <h3 className="text-lg font-bold text-slate-800">Frequently Asked Questions</h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setFaqs([...faqs, { question: "", answer: "" }])}
+                            className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 text-sm font-semibold"
+                        >
+                            <Plus size={16} />
+                            Add FAQ
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {faqs.map((faq, index) => (
+                            <div key={index} className="p-4 border border-slate-200 rounded-xl space-y-3 bg-slate-50/50 relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => setFaqs(faqs.filter((_, i) => i !== index))}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                                <div className="space-y-2 pr-8">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {index + 1}</label>
+                                    <input
+                                        type="text"
+                                        value={faq.question}
+                                        onChange={(e) => {
+                                            const newFaqs = [...faqs];
+                                            newFaqs[index].question = e.target.value;
+                                            setFaqs(newFaqs);
+                                        }}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
+                                        placeholder="Enter the question..."
+                                    />
+                                </div>
+                                <div className="space-y-2 pr-8">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Answer {index + 1}</label>
+                                    <textarea
+                                        value={faq.answer}
+                                        onChange={(e) => {
+                                            const newFaqs = [...faqs];
+                                            newFaqs[index].answer = e.target.value;
+                                            setFaqs(newFaqs);
+                                        }}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm h-24 resize-none"
+                                        placeholder="Enter the answer..."
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        {faqs.length === 0 && (
+                            <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
+                                <p className="text-slate-400 text-sm">No FAQs added yet. Click "Add FAQ" to start.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* New Publishing Controls - always visible at bottom */}
