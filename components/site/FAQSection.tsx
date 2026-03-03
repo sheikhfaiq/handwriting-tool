@@ -8,14 +8,43 @@ interface FAQItem {
 }
 
 interface FAQSectionProps {
-    faqs: FAQItem[];
+    faqs?: FAQItem[];
     title?: string;
 }
+
+const DEFAULT_FAQS: FAQItem[] = [
+    {
+        question: "What is a text to handwriting generator used for?",
+        answer: "It converts typed text into a handwritten style."
+    },
+    {
+        question: "Is the text to handwriting free to use?",
+        answer: "Yes, our convert text to handwriting tool is free."
+    },
+    {
+        question: "Does it work on mobile devices?",
+        answer: "Yes, the tool is fully compatible with mobile phones and tablets."
+    },
+    {
+        question: "Can I choose different handwriting styles?",
+        answer: "Yes, multiple handwriting styles are available to suit different needs."
+    },
+    {
+        question: "Can I print text to handwriting documents?",
+        answer: "Absolutely. Our tools support printable formats, such as PDF."
+    },
+    {
+        question: "Will text to handwriting replace real handwriting?",
+        answer: "No, but it will continue to support and complement it."
+    }
+];
 
 const FAQSection = ({ faqs, title = "Frequently Asked Questions?" }: FAQSectionProps) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-    if (!faqs || faqs.length === 0) return null;
+    const displayFaqs = faqs && faqs.length > 0 ? faqs : DEFAULT_FAQS;
+
+    if (!displayFaqs || displayFaqs.length === 0) return null;
 
     const toggleFAQ = (index: number) => {
         setActiveIndex(activeIndex === index ? null : index);
@@ -31,7 +60,7 @@ const FAQSection = ({ faqs, title = "Frequently Asked Questions?" }: FAQSectionP
                 </div>
 
                 <div className="grid gap-4 max-w-4xl">
-                    {faqs.map((faq, index) => (
+                    {displayFaqs.map((faq, index) => (
                         <div
                             key={index}
                             className={`relative transition-all duration-500 ease-out rounded-2xl ${activeIndex === index
