@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Edit2, Trash2, Camera, Eye } from "lucide-react";
+import Swal from "sweetalert2";
+import { toast } from "react-hot-toast";
 
 interface Post {
     id: string;
@@ -37,13 +39,30 @@ export default function PostsList() {
     };
 
     const deletePost = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "This blog post will be permanently deleted!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel"
+        });
 
-        try {
-            await fetch(`/api/admin/posts/${id}`, { method: "DELETE" });
-            setPosts(posts.filter((p) => p.id !== id));
-        } catch (error) {
-            console.error("Error deleting post:", error);
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch(`/api/admin/posts/${id}`, { method: "DELETE" });
+                if (res.ok) {
+                    setPosts(posts.filter((p) => p.id !== id));
+                    toast.success("Post deleted successfully!");
+                } else {
+                    toast.error("Failed to delete post.");
+                }
+            } catch (error) {
+                console.error("Error deleting post:", error);
+                toast.error("An error occurred while deleting the post.");
+            }
         }
     };
 
@@ -55,9 +74,9 @@ export default function PostsList() {
                 <h2 className="text-2xl font-bold text-slate-800">Blog Posts</h2>
                 <Link
                     href="/admin/manage-posts/new"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                    className="bg-[#1e355e] text-white px-3.5 py-1.5 rounded-[3px] flex items-center gap-2 hover:bg-blue-700 transition-all font-bold text-sm shadow-lg shadow-blue-900/10 active:scale-95"
                 >
-                    <Plus size={20} />
+                    <Plus size={16} />
                     Add New Post
                 </Link>
             </div>
@@ -92,7 +111,7 @@ export default function PostsList() {
                                 </td>
                                 <td className="px-6 py-4">
                                     {post.category ? (
-                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
+                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-[3px] text-xs font-semibold">
                                             {post.category.name}
                                         </span>
                                     ) : (
@@ -101,7 +120,7 @@ export default function PostsList() {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${post.published ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                        className={`px-2 py-1 rounded-[3px] text-xs font-medium ${post.published ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                                             }`}
                                     >
                                         {post.published ? "Published" : "Draft"}
@@ -116,21 +135,21 @@ export default function PostsList() {
                                             href={`/blog/${post.slug}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-2 text-slate-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                            className="p-2 text-slate-600 hover:text-green-600 hover:bg-green-50 rounded-[3px] transition-colors"
                                             title="View Live"
                                         >
                                             <Eye size={18} />
                                         </a>
                                         <Link
                                             href={`/admin/manage-posts/${post.id}`}
-                                            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-[3px] transition-colors"
                                             title="Edit"
                                         >
                                             <Edit2 size={18} />
                                         </Link>
                                         <button
                                             onClick={() => deletePost(post.id)}
-                                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-[3px] transition-colors"
                                             title="Delete"
                                         >
                                             <Trash2 size={18} />

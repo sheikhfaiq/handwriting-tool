@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Editor from "@/components/admin/Editor";
-import { ArrowLeft, Save, Eye } from "lucide-react";
+import { ArrowLeft, Save, Eye, Plus, Trash2, HelpCircle, FileText, Quote } from "lucide-react";
 import { getSession } from "next-auth/react";
 import Link from "next/link";
+import FAQSection from "@/components/site/FAQSection";
+import { toast } from "react-hot-toast";
 
 export default function PageForm() {
     const router = useRouter();
@@ -16,6 +18,8 @@ export default function PageForm() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [metaDescription, setMetaDescription] = useState("");
+    const [conclusion, setConclusion] = useState("");
+    const [faqs, setFaqs] = useState<{ question: string, answer: string }[]>([]);
     const [published, setPublished] = useState(false);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
@@ -43,6 +47,8 @@ export default function PageForm() {
             setTitle(data.title);
             setContent(data.content);
             setMetaDescription(data.metaDescription || "");
+            setConclusion(data.conclusion || "");
+            setFaqs(Array.isArray(data.faq) ? data.faq : []);
             setPublished(data.published);
         } catch (error) {
             console.error("Error fetching page:", error);
@@ -65,6 +71,8 @@ export default function PageForm() {
                     title,
                     content,
                     metaDescription,
+                    conclusion,
+                    faq: faqs,
                     published: targetPublishedState
                 }),
             });
@@ -72,10 +80,13 @@ export default function PageForm() {
             // Update local state to reflect the action taken
             setPublished(targetPublishedState);
 
+            toast.success(isNew ? "Page created successfully!" : "Page updated successfully!");
+
             router.push("/admin/manage-pages");
             router.refresh();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving page:", error);
+            toast.error(error.message || "Failed to save page.");
         } finally {
             setSaving(false);
         }
@@ -158,11 +169,113 @@ export default function PageForm() {
                                     placeholder="Write your content here..."
                                     className="!bg-transparent !border-none !shadow-none"
                                 />
+
+                                {faqs.length > 0 && (
+                                    <div className="mt-16">
+                                        <FAQSection faqs={faqs} />
+                                    </div>
+                                )}
+
+                                {conclusion && (
+                                    <div className="mt-10 flex flex-col items-center text-center max-w-4xl mx-auto pb-12">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl shadow-blue-500/5 flex items-center justify-center mb-10 border border-slate-50">
+                                            <Quote size={32} className="text-blue-600 rotate-180" />
+                                        </div>
+
+                                        <h2 className="text-4xl md:text-5xl font-bold text-[#1e355e] mb-10">
+                                            Conclusion
+                                        </h2>
+
+                                        <p className="text-slate-600 text-xl md:text-2xl leading-relaxed italic font-medium font-(family-name:--font-playfair)">
+                                            "{conclusion}"
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
                         <Editor value={content} onChange={setContent} key={id} />
                     )}
+                </div>
+
+                {/* FAQ Section */}
+                <div className="space-y-4 pt-16 border-t border-slate-100 mt-10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                                <HelpCircle size={22} className="text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">Frequently Asked Questions</h3>
+                                <p className="text-xs text-slate-400 font-medium">Add questions and answers for your readers</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setFaqs([...faqs, { question: "", answer: "" }])}
+                            className="bg-[#1e355e] text-white px-4 py-1.5 rounded-[3px] hover:bg-blue-700 transition-all flex items-center gap-2 text-xs font-bold shadow-md shadow-blue-900/10 active:scale-95"
+                        >
+                            <Plus size={14} />
+                            Add New FAQ
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {faqs.map((faq, index) => (
+                            <div key={index} className="p-4 border border-slate-200 rounded-xl space-y-3 bg-slate-50/50 relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => setFaqs(faqs.filter((_, i) => i !== index))}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                                <div className="space-y-2 pr-8">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {index + 1}</label>
+                                    <input
+                                        type="text"
+                                        value={faq.question}
+                                        onChange={(e) => {
+                                            const newFaqs = [...faqs];
+                                            newFaqs[index].question = e.target.value;
+                                            setFaqs(newFaqs);
+                                        }}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
+                                        placeholder="Enter the question..."
+                                    />
+                                </div>
+                                <div className="space-y-2 pr-8">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Answer {index + 1}</label>
+                                    <textarea
+                                        value={faq.answer}
+                                        onChange={(e) => {
+                                            const newFaqs = [...faqs];
+                                            newFaqs[index].answer = e.target.value;
+                                            setFaqs(newFaqs);
+                                        }}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm h-24 resize-none"
+                                        placeholder="Enter the answer..."
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Conclusion Section */}
+                <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                        <FileText size={20} className="text-blue-600" />
+                        <h3 className="text-lg font-bold text-slate-800">Conclusion</h3>
+                    </div>
+                    <div className="space-y-2">
+                        <textarea
+                            value={conclusion}
+                            onChange={(e) => setConclusion(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-32 resize-none"
+                            placeholder="Write a final summary or conclusion for this page..."
+                        />
+                    </div>
                 </div>
 
                 {/* New Publishing Controls - always visible at bottom */}
@@ -171,9 +284,9 @@ export default function PageForm() {
                         type="button"
                         onClick={() => handleSave(false)}
                         disabled={saving}
-                        className="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-300 transition-colors disabled:opacity-50 font-medium"
+                        className="bg-slate-50 text-slate-600 border border-slate-200 px-5 py-2 rounded-[3px] flex items-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-50 font-bold text-sm active:scale-95"
                     >
-                        <Save size={20} />
+                        <Save size={18} />
                         {saving && !published ? "Saving..." : "Save Draft"}
                     </button>
 
@@ -184,7 +297,7 @@ export default function PageForm() {
                                     type="button"
                                     onClick={() => handleSave(false)}
                                     disabled={saving}
-                                    className="bg-red-50 text-red-600 border border-red-200 px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors disabled:opacity-50 font-medium"
+                                    className="bg-red-50 text-red-600 border border-red-100 px-5 py-2 rounded-[3px] flex items-center gap-2 hover:bg-red-100 transition-all disabled:opacity-50 font-bold text-sm active:scale-95"
                                 >
                                     Unpublish
                                 </button>
@@ -194,13 +307,13 @@ export default function PageForm() {
                                 type="button"
                                 onClick={() => handleSave(true)}
                                 disabled={saving}
-                                className={`px-6 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 font-semibold shadow-sm ${published
+                                className={`px-5 py-2 rounded-[3px] flex items-center gap-2 transition-all disabled:opacity-50 font-bold text-sm shadow-md active:scale-95 ${published
                                     ? "bg-green-600 text-white hover:bg-green-700"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                    : "bg-[#1e355e] text-white hover:bg-blue-700"
                                     }`}
                             >
-                                <Eye size={20} />
-                                {saving && published ? "Publishing..." : (published ? "Update Live Page" : "Publish Live")}
+                                <Eye size={18} />
+                                {saving && published ? "Publishing..." : (published ? "Update Live Page" : (isNew ? "Create Page" : "Publish Live"))}
                             </button>
                         </>
                     )}

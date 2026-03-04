@@ -11,6 +11,8 @@ import "react-quill-new/dist/quill.snow.css";
 export const revalidate = 3600;
 
 
+import { Quote } from "lucide-react";
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const post = await (prisma as any).post.findUnique({
@@ -79,7 +81,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         <img
                             src={post.coverImage}
                             alt={post.title}
-                            className="max-h-[350px] w-auto rounded-xl shadow-md object-contain"
+                            className="max-h-[520px] w-auto rounded-xl shadow-md object-contain"
                         />
                     </div>
                 )}
@@ -116,6 +118,22 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 {post.faq && Array.isArray(post.faq) && post.faq.length > 0 && (
                     <div className="mt-16">
                         <FAQSection faqs={post.faq as any} />
+                    </div>
+                )}
+
+                {post.conclusion && (
+                    <div className="mt-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl shadow-blue-500/5 flex items-center justify-center mb-10 border border-slate-50">
+                            <Quote size={32} className="text-blue-600 rotate-180" />
+                        </div>
+
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#1e355e] mb-10">
+                            Conclusion
+                        </h2>
+
+                        <p className="text-slate-600 text-xl md:text-2xl leading-relaxed italic font-medium font-(family-name:--font-playfair)">
+                            "{post.conclusion}"
+                        </p>
                     </div>
                 )}
 

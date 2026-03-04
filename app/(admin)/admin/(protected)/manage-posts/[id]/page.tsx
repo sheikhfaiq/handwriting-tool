@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Editor from "@/components/admin/Editor";
-import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2, Eye, Plus, Trash2, HelpCircle } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2, Eye, Plus, Trash2, HelpCircle, FileText, Quote } from "lucide-react";
 import { getSession } from "next-auth/react";
 import Link from "next/link";
+import FAQSection from "@/components/site/FAQSection";
+import { toast } from "react-hot-toast";
 
 export default function PostForm() {
     const router = useRouter();
@@ -20,6 +22,7 @@ export default function PostForm() {
     const [content, setContent] = useState("");
     const [excerpt, setExcerpt] = useState("");
     const [metaDescription, setMetaDescription] = useState("");
+    const [conclusion, setConclusion] = useState("");
     const [coverImage, setCoverImage] = useState("");
     const [published, setPublished] = useState(false);
     const [faqs, setFaqs] = useState<{ question: string, answer: string }[]>([]);
@@ -78,6 +81,7 @@ export default function PostForm() {
             setContent(data.content);
             setExcerpt(data.excerpt || "");
             setMetaDescription(data.metaDescription || "");
+            setConclusion(data.conclusion || "");
             setCoverImage(data.coverImage || "");
             setPublished(data.published);
             setFaqs(Array.isArray(data.faq) ? data.faq : []);
@@ -110,10 +114,11 @@ export default function PostForm() {
             const data = await res.json();
             if (data.url) {
                 setCoverImage(data.url);
+                toast.success("Image uploaded successfully!");
             }
         } catch (error: any) {
             console.error("Upload failed:", error);
-            alert(error.message || "Upload failed. Please try again.");
+            toast.error(error.message || "Upload failed. Please try again.");
         } finally {
             setUploading(false);
         }
@@ -136,6 +141,7 @@ export default function PostForm() {
                     content,
                     excerpt,
                     metaDescription,
+                    conclusion,
                     coverImage,
                     published: targetPublishedState,
                     faq: faqs
@@ -158,11 +164,13 @@ export default function PostForm() {
             // Update local state
             setPublished(targetPublishedState);
 
+            toast.success(isNew ? "Post created successfully!" : "Post updated successfully!");
+
             router.push("/admin/manage-posts");
             router.refresh();
         } catch (error: any) {
             console.error("Error saving post:", error);
-            alert(error.message);
+            toast.error(error.message);
         } finally {
             setSaving(false);
         }
@@ -320,6 +328,28 @@ export default function PostForm() {
                                     placeholder="Write your content here..."
                                     className="!bg-transparent !border-none !shadow-none"
                                 />
+
+                                {faqs.length > 0 && (
+                                    <div className="mt-16">
+                                        <FAQSection faqs={faqs} />
+                                    </div>
+                                )}
+
+                                {conclusion && (
+                                    <div className="mt-10 flex flex-col items-center text-center max-w-4xl mx-auto pb-12">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl shadow-blue-500/5 flex items-center justify-center mb-10 border border-slate-50">
+                                            <Quote size={32} className="text-blue-600 rotate-180" />
+                                        </div>
+
+                                        <h2 className="text-4xl md:text-5xl font-bold text-[#1e355e] mb-10">
+                                            Conclusion
+                                        </h2>
+
+                                        <p className="text-slate-600 text-xl md:text-2xl leading-relaxed italic font-medium font-(family-name:--font-playfair)">
+                                            "{conclusion}"
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -327,19 +357,24 @@ export default function PostForm() {
                     )}
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-slate-100">
+                <div className="space-y-4 pt-16 border-t border-slate-100 mt-10">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <HelpCircle size={20} className="text-blue-600" />
-                            <h3 className="text-lg font-bold text-slate-800">Frequently Asked Questions</h3>
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                                <HelpCircle size={22} className="text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">Frequently Asked Questions</h3>
+                                <p className="text-xs text-slate-400 font-medium">Add questions and answers for your readers</p>
+                            </div>
                         </div>
                         <button
                             type="button"
                             onClick={() => setFaqs([...faqs, { question: "", answer: "" }])}
-                            className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 text-sm font-semibold"
+                            className="bg-[#1e355e] text-white px-4 py-1.5 rounded-[3px] hover:bg-blue-700 transition-all flex items-center gap-2 text-xs font-bold shadow-md shadow-blue-900/10 active:scale-95"
                         >
-                            <Plus size={16} />
-                            Add FAQ
+                            <Plus size={14} />
+                            Add New FAQ
                         </button>
                     </div>
 
@@ -390,15 +425,30 @@ export default function PostForm() {
                     </div>
                 </div>
 
+                <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                        <FileText size={20} className="text-blue-600" />
+                        <h3 className="text-lg font-bold text-slate-800">Conclusion</h3>
+                    </div>
+                    <div className="space-y-2">
+                        <textarea
+                            value={conclusion}
+                            onChange={(e) => setConclusion(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-32 resize-none"
+                            placeholder="Write a final summary or conclusion for this post..."
+                        />
+                    </div>
+                </div>
+
                 {/* New Publishing Controls - always visible at bottom */}
                 <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3 sticky bottom-0 bg-white p-4 -mx-8 -mb-8 rounded-b-xl z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <button
                         type="button"
                         onClick={() => handleSave(false)}
                         disabled={saving}
-                        className="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-300 transition-colors disabled:opacity-50 font-medium"
+                        className="bg-slate-50 text-slate-600 border border-slate-200 px-5 py-2 rounded-[3px] flex items-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-50 font-bold text-sm active:scale-95"
                     >
-                        <Save size={20} />
+                        <Save size={18} />
                         {saving && !published ? "Saving..." : "Save Draft"}
                     </button>
 
@@ -409,7 +459,7 @@ export default function PostForm() {
                                     type="button"
                                     onClick={() => handleSave(false)}
                                     disabled={saving}
-                                    className="bg-red-50 text-red-600 border border-red-200 px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors disabled:opacity-50 font-medium"
+                                    className="bg-red-50 text-red-600 border border-red-100 px-5 py-2 rounded-[3px] flex items-center gap-2 hover:bg-red-100 transition-all disabled:opacity-50 font-bold text-sm active:scale-95"
                                 >
                                     Unpublish
                                 </button>
@@ -419,12 +469,12 @@ export default function PostForm() {
                                 type="button"
                                 onClick={() => handleSave(true)}
                                 disabled={saving}
-                                className={`px-6 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 font-semibold shadow-sm ${published
+                                className={`px-5 py-2 rounded-[3px] flex items-center gap-2 transition-all disabled:opacity-50 font-bold text-sm shadow-md active:scale-95 ${published
                                     ? "bg-green-600 text-white hover:bg-green-700"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                    : "bg-[#1e355e] text-white hover:bg-blue-700"
                                     }`}
                             >
-                                <Eye size={20} />
+                                <Eye size={18} />
                                 {saving && published ? "Publishing..." : (published ? "Update Live Page" : "Publish Live")}
                             </button>
                         </>

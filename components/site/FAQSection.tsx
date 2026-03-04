@@ -52,14 +52,14 @@ const FAQSection = ({ faqs, title = "Frequently Asked Questions?" }: FAQSectionP
 
     return (
         <section id="faqs" className="py-12 bg-transparent relative overflow-hidden">
-            <div className="relative z-10">
-                <div className="mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-[#1e355e] tracking-tight">
+            <div className="relative z-10 container mx-auto px-4">
+                <div className="mb-10 text-center">
+                    <h2 className="text-3xl md:text-4xl font-bold text-[#1e355e] tracking-tight">
                         {title}
                     </h2>
                 </div>
 
-                <div className="grid gap-4 max-w-4xl">
+                <div className="grid gap-4 max-w-4xl mx-auto">
                     {displayFaqs.map((faq, index) => (
                         <div
                             key={index}

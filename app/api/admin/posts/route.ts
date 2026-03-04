@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, content, excerpt, metaDescription, coverImage, published, categoryId, slug: userSlug, faq } = await req.json();
+        const { title, content, excerpt, metaDescription, conclusion, coverImage, published, categoryId, slug: userSlug, faq } = await req.json();
         const slug = userSlug
             ? slugify(userSlug, { lower: true, strict: true })
             : slugify(title, { lower: true, strict: true });
@@ -42,6 +42,7 @@ export async function POST(req: Request) {
                 content,
                 excerpt,
                 metaDescription,
+                conclusion,
                 coverImage,
                 published: publishedState,
                 categoryId: targetCategoryId,
@@ -61,6 +62,6 @@ export async function POST(req: Request) {
         if (error.code === 'P2002' && error.meta?.target?.includes('slug')) {
             return NextResponse.json({ error: "Slug already exists. Please choose a different one." }, { status: 400 });
         }
-        return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+        return NextResponse.json({ error: error.message || "Failed to create post" }, { status: 500 });
     }
 }

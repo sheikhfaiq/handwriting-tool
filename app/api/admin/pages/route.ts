@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, content, metaDescription, published } = await req.json();
+        const { title, content, metaDescription, published, faq, conclusion } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
         const isSystemAdmin = session.user?.email === "admin@gmail.com";
@@ -39,6 +39,8 @@ export async function POST(req: Request) {
                 metaDescription,
                 published: publishedState,
                 slug,
+                faq: faq || [],
+                conclusion,
             },
         });
 
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
         revalidatePath("/admin/manage-pages");
 
         return NextResponse.json(page, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to create page" }, { status: 500 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || "Failed to create page" }, { status: 500 });
     }
 }

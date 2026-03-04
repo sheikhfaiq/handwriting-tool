@@ -39,7 +39,7 @@ export async function PUT(
 
     try {
         const params = await props.params;
-        const { title, content, metaDescription, published } = await req.json();
+        const { title, content, metaDescription, published, faq, conclusion } = await req.json();
         const slug = slugify(title, { lower: true, strict: true });
 
         const isSystemAdmin = session.user?.email === "admin@gmail.com";
@@ -56,6 +56,8 @@ export async function PUT(
                 metaDescription,
                 published: publishedState,
                 slug,
+                faq: faq || [],
+                conclusion,
             },
         });
 
@@ -66,8 +68,8 @@ export async function PUT(
         revalidatePath("/admin/manage-pages");
 
         return NextResponse.json(page);
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to update page" }, { status: 500 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || "Failed to update page" }, { status: 500 });
     }
 }
 

@@ -23,6 +23,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/admin/AuthProvider";
+import { Toaster } from "react-hot-toast";
 import ScrollToTop from "@/components/site/ScrollToTop";
 
 const geistSans = Geist({
@@ -138,6 +139,7 @@ const swankyMoo = Swanky_and_Moo_Moo({
   variable: "--font-swanky-moo",
   weight: "400",
   subsets: ["latin"],
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -202,8 +204,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`
           ${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${pacifico.variable}
           ${indieFlower.variable} ${caveat.variable} ${shadowsIntoLight.variable} ${dancingScript.variable}
@@ -215,6 +218,17 @@ export default function RootLayout({
         `}
       >
         <AuthProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                borderRadius: '10px',
+                background: '#333',
+                color: '#fff',
+              },
+            }}
+          />
           {children}
         </AuthProvider>
       </body>

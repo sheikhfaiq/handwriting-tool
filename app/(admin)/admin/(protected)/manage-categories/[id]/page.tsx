@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import slugify from "slugify";
+import { toast } from "react-hot-toast";
 
 export default function CategoryForm() {
     const router = useRouter();
@@ -58,11 +59,13 @@ export default function CategoryForm() {
                 throw new Error(errorData.error || "Failed to save category");
             }
 
+            toast.success(isNew ? "Category created successfully!" : "Category updated successfully!");
+
             router.push("/admin/manage-categories");
             router.refresh();
         } catch (error: any) {
             console.error("Error saving category:", error);
-            alert(error.message);
+            toast.error(error.message);
         } finally {
             setSaving(false);
         }
@@ -113,10 +116,10 @@ export default function CategoryForm() {
                     <button
                         type="submit"
                         disabled={saving}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors disabled:opacity-50 font-semibold"
+                        className="bg-[#1e355e] text-white px-5 py-2 rounded-[3px] hover:bg-blue-700 transition-all font-bold text-sm shadow-md shadow-blue-900/10 disabled:opacity-50 active:scale-95 flex items-center gap-2"
                     >
-                        <Save size={20} />
-                        {saving ? "Saving..." : "Save Category"}
+                        <Save size={18} />
+                        {saving ? "Saving..." : (isNew ? "Create Category" : "Save Category")}
                     </button>
                 </div>
             </form>

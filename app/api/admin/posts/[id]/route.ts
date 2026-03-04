@@ -38,7 +38,7 @@ export async function PUT(
 
     try {
         const params = await props.params;
-        const { title, content, excerpt, metaDescription, coverImage, published, categoryId, slug: userSlug, faq } = await req.json();
+        const { title, content, excerpt, metaDescription, conclusion, coverImage, published, categoryId, slug: userSlug, faq } = await req.json();
 
         // Handle empty categoryId as null to avoid foreign key constraint error P2003
         const targetCategoryId = categoryId || null;
@@ -58,6 +58,7 @@ export async function PUT(
                 content,
                 excerpt,
                 metaDescription,
+                conclusion,
                 coverImage,
                 published: isSystemAdmin ? published : false, // Force draft if not System Admin
                 categoryId: targetCategoryId,
@@ -79,7 +80,7 @@ export async function PUT(
         if (error.code === 'P2002' && error.meta?.target?.includes('slug')) {
             return NextResponse.json({ error: "Slug already exists. Please choose a different one." }, { status: 400 });
         }
-        return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
+        return NextResponse.json({ error: error.message || "Failed to update post" }, { status: 500 });
     }
 }
 

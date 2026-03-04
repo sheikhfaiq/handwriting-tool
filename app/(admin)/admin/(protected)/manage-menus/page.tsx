@@ -18,6 +18,8 @@ import {
     ArrowRight,
     ArrowLeft
 } from "lucide-react";
+import Swal from "sweetalert2";
+import { toast } from "react-hot-toast";
 
 interface MenuItem {
     id: string;
@@ -207,10 +209,14 @@ export default function ManageMenus() {
                 body: JSON.stringify({ name: activeMenuName, items: itemsToSave }),
                 headers: { "Content-Type": "application/json" }
             });
-            if (res.ok) alert(`Menu "${activeMenuName}" saved successfully!`);
+            if (res.ok) {
+                toast.success(`Menu "${activeMenuName}" saved successfully!`);
+            } else {
+                toast.error("Failed to save menu");
+            }
         } catch (error) {
             console.error(error);
-            alert("Failed to save menu");
+            toast.error("Failed to save menu");
         } finally {
             setSaving(false);
         }
@@ -220,7 +226,7 @@ export default function ManageMenus() {
         if (!newMenuName) return;
         const name = newMenuName.toUpperCase().replace(/\s+/g, '_');
         if (menus.find(m => m.name === name)) {
-            alert("Menu already exists");
+            toast.error("Menu already exists");
             return;
         }
         setMenus([...menus, { id: `temp-${Date.now()}`, name, items: [] }]);
@@ -232,20 +238,35 @@ export default function ManageMenus() {
     const deleteMenu = async (name: string) => {
         const compulsory = ["HEADER", "FOOTER", "FOOTER_NAV", "FOOTER_HELP"];
         if (compulsory.includes(name)) return;
-        if (!confirm(`Are you sure you want to delete the menu "${name}"?`)) return;
 
-        try {
-            const res = await fetch("/api/admin/menus", {
-                method: "DELETE",
-                body: JSON.stringify({ name }),
-                headers: { "Content-Type": "application/json" }
-            });
-            if (res.ok) {
-                setMenus(menus.filter(m => m.name !== name));
-                setActiveMenuName("HEADER");
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: `The menu "${name}" will be permanently deleted!`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel"
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch("/api/admin/menus", {
+                    method: "DELETE",
+                    body: JSON.stringify({ name }),
+                    headers: { "Content-Type": "application/json" }
+                });
+                if (res.ok) {
+                    setMenus(menus.filter(m => m.name !== name));
+                    setActiveMenuName("HEADER");
+                    toast.success("Menu deleted successfully!");
+                } else {
+                    toast.error("Failed to delete menu");
+                }
+            } catch (error) {
+                toast.error("Failed to delete menu");
             }
-        } catch (error) {
-            alert("Failed to delete menu");
         }
     };
 
@@ -264,9 +285,9 @@ export default function ManageMenus() {
                 </div>
                 <button
                     onClick={() => setIsCreatingMenu(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#1e355e] text-white rounded-2xl hover:bg-blue-600 transition-all font-bold shadow-lg shadow-blue-900/10"
+                    className="flex items-center gap-2 px-4 py-1.5 bg-[#1e355e] text-white rounded-[3px] hover:bg-blue-700 transition-all font-bold text-sm shadow-md shadow-blue-900/10 active:scale-95"
                 >
-                    <Plus size={20} /> Create New Menu
+                    <Plus size={16} /> Create New Menu
                 </button>
             </div>
 
@@ -310,13 +331,13 @@ export default function ManageMenus() {
                             <div className="p-6 pt-0 space-y-2 border-t border-gray-50">
                                 <button
                                     onClick={() => addItem("Home", "/")}
-                                    className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                    className="w-full text-left p-3 rounded-[3px] hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                 >
                                     Home <Plus size={16} className="text-gray-300 group-hover:text-purple-500" />
                                 </button>
                                 <button
                                     onClick={() => addItem("Blog", "/blog")}
-                                    className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                    className="w-full text-left p-3 rounded-[3px] hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                 >
                                     Blog <Plus size={16} className="text-gray-300 group-hover:text-purple-500" />
                                 </button>
@@ -341,7 +362,7 @@ export default function ManageMenus() {
                                     <button
                                         key={page.id}
                                         onClick={() => addItem(page.title, `/${page.slug}`)}
-                                        className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                        className="w-full text-left p-3 rounded-[3px] hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                     >
                                         {page.title}
                                         <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />
@@ -369,7 +390,7 @@ export default function ManageMenus() {
                                     <button
                                         key={post.id}
                                         onClick={() => addItem(post.title, `/blog/${post.slug}`)}
-                                        className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
+                                        className="w-full text-left p-3 rounded-[3px] hover:bg-gray-50 text-sm font-semibold text-gray-600 flex justify-between items-center group transition-colors"
                                     >
                                         <span className="truncate flex-1 mr-2">{post.title}</span>
                                         <Plus size={16} className="text-gray-300 group-hover:text-orange-500" />
@@ -416,7 +437,7 @@ export default function ManageMenus() {
                                             (document.getElementById('custom-url') as HTMLInputElement).value = '';
                                         }
                                     }}
-                                    className="w-full py-2.5 bg-gray-100 text-[#1e355e] rounded-xl font-bold text-sm hover:bg-green-500 hover:text-white transition-all"
+                                    className="w-full py-2 bg-[#1e355e] text-white rounded-[3px] font-bold text-sm hover:bg-blue-700 transition-all shadow-md shadow-blue-900/10 active:scale-95"
                                 >
                                     Add to Menu
                                 </button>
@@ -436,10 +457,10 @@ export default function ManageMenus() {
                             <button
                                 onClick={saveMenu}
                                 disabled={saving}
-                                className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                                className="flex items-center gap-2 px-5 py-2 bg-[#1e355e] text-white rounded-[3px] hover:bg-blue-700 transition-all font-bold text-sm shadow-md shadow-blue-900/10 disabled:opacity-50 active:scale-95"
                             >
-                                {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                                {saving ? "Saving..." : "Save Menu"}
+                                {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                {saving ? "Saving..." : "Save Menu Structure"}
                             </button>
                         </div>
 
@@ -505,7 +526,7 @@ export default function ManageMenus() {
 
                                                         <button
                                                             onClick={() => removeItem(item.id)}
-                                                            className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all self-end mb-1"
+                                                            className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-[3px] transition-all self-end mb-1"
                                                             title="Remove Item"
                                                         >
                                                             <Trash2 size={20} />
@@ -553,14 +574,14 @@ export default function ManageMenus() {
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => setIsCreatingMenu(false)}
-                                    className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                                    className="flex-1 py-2 bg-slate-100 text-slate-500 rounded-[3px] font-bold text-sm hover:bg-slate-200 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={createNewMenu}
                                     disabled={!newMenuName}
-                                    className="flex-1 py-4 bg-[#1e355e] text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-[#1e355e] text-white rounded-[3px] font-bold text-sm hover:bg-blue-700 transition-all shadow-md shadow-blue-900/10 disabled:opacity-50 active:scale-95"
                                 >
                                     Create Menu
                                 </button>

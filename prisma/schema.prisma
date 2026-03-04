@@ -26,6 +26,8 @@ model Page {
   slug            String    @unique
   content         String    @db.Text
   metaDescription String?   @db.Text
+  faq             Json?     @default("[]")
+  conclusion      String?   @db.Text
   published       Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -47,6 +49,7 @@ model Post {
   content         String    @db.Text
   excerpt         String?   @db.Text
   metaDescription String?   @db.Text
+  conclusion      String?   @db.Text
   coverImage      String?
   category        Category? @relation(fields: [categoryId], references: [id])
   categoryId      String?
